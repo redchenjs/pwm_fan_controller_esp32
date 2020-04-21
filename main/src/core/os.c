@@ -16,7 +16,7 @@
 
 EventGroupHandle_t user_event_group;
 
-#if defined(CONFIG_ENABLE_WAKEUP_KEY) || defined(CONFIG_ENABLE_SLEEP_KEY) || defined(CONFIG_ENABLE_OTA_OVER_SPP)
+#ifdef CONFIG_ENABLE_OTA_OVER_SPP
 static EventBits_t restart_wait_bits = 0;
 
 static void os_power_task_handle(void *pvParameters)
