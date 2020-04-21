@@ -1,0 +1,107 @@
+menu "PWM Fan Controller"
+
+menu "Fan Configuration"
+config FAN_OUT_PIN
+    int "Fan Out Pin"
+    default 33
+
+config FAN_IN_PIN
+    int "Fan In Pin"
+    default 27
+
+config ENABLE_QC
+    bool "Enable QuickCharge"
+    default y
+    help
+        Enable QuickCharge feature.
+endmenu
+
+menu "Bluetooth Configuration"
+config BT_NAME
+    string "Bluetooth Name"
+    default "PWM Fan Controller"
+    help
+        Bluetooth name exposed by the device.
+
+menuconfig ENABLE_OTA_OVER_SPP
+    bool "Enable OTA over SPP"
+    default y
+    help
+        Enable OTA feature, you can use the SPP profile to upload the new firmware.
+
+config BT_SPP_SERVER_NAME
+    string "SPP Server Name"
+    default "OTA"
+    depends on ENABLE_OTA_OVER_SPP
+    help
+        Bluetooth SPP server name.
+
+config ENABLE_BLE_CONTROL_IF
+    bool "Enable BLE Control Interface"
+    default y
+    help
+        Select this to enable BLE Control Interface.
+endmenu
+
+menu "Input Configuration"
+config ENABLE_INPUT
+    bool "Enable Input"
+    default y
+    help
+        Select this to enable Input.
+
+config PHASE_A_PIN
+    int "Phase A Pin"
+    default 22
+    depends on ENABLE_INPUT
+
+config PHASE_B_PIN
+    int "Phase B Pin"
+    default 21
+    depends on ENABLE_INPUT
+
+config BUTTON_PIN
+    int "Button Pin"
+    default 32
+    depends on ENABLE_INPUT
+endmenu
+
+menu "GUI Configuration"
+config ENABLE_GUI
+    bool "Enable GUI"
+    default y
+    help
+        Select this to enable GUI.
+
+config DEVICE_RST_PIN
+    int "Device RST Pin"
+    default 2
+    depends on ENABLE_GUI
+
+config DEVICE_DC_PIN
+    int "Device DC Pin"
+    default 16
+    depends on ENABLE_GUI
+
+config DEVICE_BL_PIN
+    int "Device BL Pin"
+    default 4
+    depends on ENABLE_GUI
+
+config SPI_SCLK_PIN
+    int "SPI SCLK Pin"
+    default 18
+    depends on ENABLE_GUI
+
+config SPI_MOSI_PIN
+    int "SPI MOSI Pin"
+    default 19
+    depends on ENABLE_GUI
+
+config SPI_CS_PIN
+    int "SPI CS Pin"
+    default 5
+    depends on ENABLE_GUI
+endmenu
+
+endmenu
