@@ -18,7 +18,7 @@ spi_device_handle_t hspi;
 
 void hspi_init(void)
 {
-    spi_bus_config_t buscfg={
+    spi_bus_config_t buscfg = {
         .miso_io_num = -1,
         .mosi_io_num = CONFIG_SPI_MOSI_PIN,
         .sclk_io_num = CONFIG_SPI_SCLK_PIN,
@@ -28,7 +28,7 @@ void hspi_init(void)
     };
     ESP_ERROR_CHECK(spi_bus_initialize(HSPI_HOST, &buscfg, 1));
 
-    spi_device_interface_config_t devcfg={
+    spi_device_interface_config_t devcfg = {
         .mode = 0,                                // SPI mode 0
         .spics_io_num = CONFIG_SPI_CS_PIN,        // CS pin
         .clock_speed_hz = 40000000,               // Clock out at 40 MHz
