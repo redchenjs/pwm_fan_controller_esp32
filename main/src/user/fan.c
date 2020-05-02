@@ -191,11 +191,11 @@ static void tim_init(void)
 static void pin_init(void)
 {
     gpio_config_t io_conf = {
-        .mode = GPIO_MODE_INPUT,
-        .intr_type = GPIO_PIN_INTR_ANYEDGE,
         .pin_bit_mask = BIT64(CONFIG_FAN_IN_PIN),
-        .pull_down_en = false,
+        .mode = GPIO_MODE_INPUT,
         .pull_up_en = true,
+        .pull_down_en = false,
+        .intr_type = GPIO_PIN_INTR_ANYEDGE,
     };
     gpio_config(&io_conf);
 
