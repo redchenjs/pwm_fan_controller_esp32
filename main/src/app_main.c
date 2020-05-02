@@ -11,6 +11,7 @@
 #include "chip/bt.h"
 #include "chip/nvs.h"
 #include "chip/spi.h"
+#include "chip/i2c.h"
 
 #include "user/fan.h"
 #include "user/gui.h"
@@ -32,6 +33,10 @@ static void chip_init(void)
 
 #ifdef CONFIG_ENABLE_GUI
     hspi_init();
+#endif
+
+#ifdef CONFIG_ENABLE_POWER_MONITOR
+    i2c0_init();
 #endif
 }
 

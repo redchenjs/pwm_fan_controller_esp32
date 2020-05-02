@@ -104,4 +104,22 @@ config SPI_CS_PIN
     depends on ENABLE_GUI
 endmenu
 
+menu "Power Monitor Configuration"
+config ENABLE_POWER_MONITOR
+    bool "Enable Power Monitor"
+    default y
+    help
+        Select this to enable Power Monitor.
+
+config I2C_SDA_PIN
+    int "I2C SDA Pin"
+    default 13
+    depends on ENABLE_POWER_MONITOR
+
+config I2C_SCL_PIN
+    int "I2C SCL Pin"
+    default 17
+    depends on ENABLE_POWER_MONITOR
+endmenu
+
 endmenu
