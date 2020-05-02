@@ -161,7 +161,7 @@ static void IRAM_ATTR key_isr_handler(void *arg)
         }
     }
 
-    if (duty < 0)   duty = 0;
+    if (duty < 0) duty = 0;
     if (duty > 255) duty = 255;
 
     duty_set = duty;
@@ -210,8 +210,8 @@ static void pin_init(void)
 
     gpio_isr_handler_add(CONFIG_PHASE_A_PIN, key_isr_handler, NULL);
 
-    io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.pin_bit_mask = BIT64(CONFIG_PHASE_B_PIN);
+    io_conf.intr_type = GPIO_INTR_DISABLE;
     gpio_config(&io_conf);
 
     io_conf.pin_bit_mask = BIT64(CONFIG_BUTTON_PIN);
