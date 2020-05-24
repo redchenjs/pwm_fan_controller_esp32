@@ -203,13 +203,14 @@ static void pwm_init(void)
         .timer_sel  = LEDC_TIMER_1,
     };
     ledc_channel_config(&ledc_channel);
+
+    ledc_fade_func_install(0);
 }
 
 static void fan_task(void *pvParameter)
 {
     uint8_t rpm_cnt = 0;
     double rpm_sum = 0.0;
-    int16_t duty_tmp = 0;
     uint32_t fan_evt = 0;
 
     tim_init();
@@ -230,26 +231,30 @@ static void fan_task(void *pvParameter)
         if (xQueueReceive(fan_evt_queue, &fan_evt, 500 / portTICK_RATE_MS)) {
             switch (fan_evt) {
 #ifdef CONFIG_ENABLE_INPUT
-                case 1:
-                    duty_tmp = fan_duty + 1;
+                case 1: {
+                    int16_t duty_tmp = fan_duty + 1;
                     duty_set = (duty_tmp < 255) ? duty_tmp : 255;
                     fan_set_duty(duty_set);
                     break;
-                case 2:
-                    duty_tmp = fan_duty - 1;
+                }
+                case 2: {
+                    int16_t duty_tmp = fan_duty - 1;
                     duty_set = (duty_tmp > 0) ? duty_tmp : 0;
                     fan_set_duty(duty_set);
                     break;
-                case 3:
-                    duty_tmp = fan_duty + 10;
+                }
+                case 3: {
+                    int16_t duty_tmp = fan_duty + 10;
                     duty_set = (duty_tmp < 255) ? duty_tmp : 255;
                     fan_set_duty(duty_set);
                     break;
-                case 4:
-                    duty_tmp = fan_duty - 10;
+                }
+                case 4: {
+                    int16_t duty_tmp = fan_duty - 10;
                     duty_set = (duty_tmp > 0) ? duty_tmp : 0;
                     fan_set_duty(duty_set);
                     break;
+                }
 #endif
                 case 0xff:
                     if (rpm_cnt++ == 5) {

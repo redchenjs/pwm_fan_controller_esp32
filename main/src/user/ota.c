@@ -247,8 +247,8 @@ void ota_exec(esp_spp_cb_param_t *param)
 
                 xEventGroupSetBits(user_event_group, BT_OTA_LOCK_BIT);
 
-                EventBits_t uxBits = xEventGroupGetBits(user_event_group);
 #ifdef CONFIG_ENABLE_BLE_CONTROL_IF
+                EventBits_t uxBits = xEventGroupGetBits(user_event_group);
                 if (!(uxBits & BLE_GATTS_IDLE_BIT)) {
                     esp_ble_gatts_close(gatts_profile_tbl[0].gatts_if, gatts_profile_tbl[0].conn_id);
                 }
