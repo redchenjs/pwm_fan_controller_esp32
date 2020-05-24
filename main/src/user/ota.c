@@ -189,14 +189,13 @@ void ota_exec(esp_spp_cb_param_t *param)
 #endif
                 ) {
                     if (!update_handle) {
+#ifdef CONFIG_ENABLE_BLE_CONTROL_IF
+                        esp_ble_gap_stop_advertising();
+#endif
 #ifdef CONFIG_ENABLE_GUI
                         gui_set_mode(0);
 #endif
                         fan_set_mode(0);
-
-#ifdef CONFIG_ENABLE_BLE_CONTROL_IF
-                        esp_ble_gap_stop_advertising();
-#endif
                     }
 
                     update_partition = esp_ota_get_next_update_partition(NULL);
@@ -246,6 +245,13 @@ void ota_exec(esp_spp_cb_param_t *param)
                 ESP_LOGI(OTA_TAG, "GET command: "CMD_FMT_RST);
 
                 xEventGroupSetBits(user_event_group, BT_OTA_LOCK_BIT);
+
+                if (!update_handle) {
+#ifdef CONFIG_ENABLE_GUI
+                    gui_set_mode(0);
+#endif
+                    fan_set_mode(0);
+                }
 
 #ifdef CONFIG_ENABLE_BLE_CONTROL_IF
                 EventBits_t uxBits = xEventGroupGetBits(user_event_group);
