@@ -12,12 +12,14 @@
 
 #include "gfx.h"
 
+#include "core/os.h"
 #include "user/fan.h"
 
 #define TAG "gui"
 
 GDisplay *gui_gdisp = NULL;
 
+static bool gui_mode = true;
 static char text_buff[32] = {0};
 
 static void gui_task(void *pvParameter)
@@ -38,24 +40,61 @@ static void gui_task(void *pvParameter)
     snprintf(text_buff, sizeof(text_buff), "RPM:");
     gdispGFillStringBox(gui_gdisp, 25, 75, 80, 40, text_buff, gui_font, Lime, Black, justifyLeft);
 
-    gdispGSetBacklight(gui_gdisp, 255);
-
     while (1) {
-        xLastWakeTime = xTaskGetTickCount();
+        if (gui_mode) {
+            if (xEventGroupGetBits(user_event_group) & GUI_RELOAD_BIT) {
+                xEventGroupClearBits(user_event_group, GUI_RELOAD_BIT);
+                continue;
+            }
 
-        snprintf(text_buff, sizeof(text_buff), "%u", fan_get_duty());
-        gdispGFillStringBox(gui_gdisp, 110, 25, 105, 40, text_buff, gui_font, Red, Black, justifyRight);
+            xLastWakeTime = xTaskGetTickCount();
 
-        snprintf(text_buff, sizeof(text_buff), "%u", fan_get_rpm());
-        gdispGFillStringBox(gui_gdisp, 110, 75, 105, 40, text_buff, gui_font, Lime, Black, justifyRight);
+            gdispGSetBacklight(gui_gdisp, 255);
 
-        gdispGFlush(gui_gdisp);
+            snprintf(text_buff, sizeof(text_buff), "%u", fan_get_duty());
+            gdispGFillStringBox(gui_gdisp, 110, 25, 105, 40, text_buff, gui_font, Red, Black, justifyRight);
 
-        vTaskDelayUntil(&xLastWakeTime, 50 / portTICK_RATE_MS);
+            snprintf(text_buff, sizeof(text_buff), "%u", fan_get_rpm());
+            gdispGFillStringBox(gui_gdisp, 110, 75, 105, 40, text_buff, gui_font, Lime, Black, justifyRight);
+
+            gdispGFlush(gui_gdisp);
+
+            vTaskDelayUntil(&xLastWakeTime, 16 / portTICK_RATE_MS);
+        } else {
+            gdispGSetBacklight(gui_gdisp, 0);
+
+            xEventGroupWaitBits(
+                user_event_group,
+                GUI_RELOAD_BIT,
+                pdTRUE,
+                pdFALSE,
+                portMAX_DELAY
+            );
+        }
     }
+}
+
+void gui_set_mode(bool val)
+{
+    gui_mode = val;
+
+    if (gui_mode) {
+        xEventGroupSetBits(user_event_group, GUI_RELOAD_BIT);
+    } else {
+        xEventGroupClearBits(user_event_group, GUI_RELOAD_BIT);
+    }
+
+    ESP_LOGI(TAG, "mode: %u", gui_mode);
+}
+
+bool gui_get_mode(void)
+{
+    return gui_mode;
 }
 
 void gui_init(void)
 {
-    xTaskCreatePinnedToCore(gui_task, "guiT", 1920, NULL, 7, NULL, 1);
+    xEventGroupSetBits(user_event_group, GUI_RELOAD_BIT);
+
+    xTaskCreatePinnedToCore(gui_task, "guiT", 1920, NULL, 7, NULL, 0);
 }

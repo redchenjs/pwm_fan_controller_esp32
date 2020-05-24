@@ -52,12 +52,12 @@ config ENABLE_INPUT
 
 config PHASE_A_PIN
     int "Phase A Pin"
-    default 22
+    default 21
     depends on ENABLE_INPUT
 
 config PHASE_B_PIN
     int "Phase B Pin"
-    default 21
+    default 22
     depends on ENABLE_INPUT
 
 config BUTTON_PIN

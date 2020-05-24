@@ -10,9 +10,12 @@
 
 #include <stdint.h>
 
-extern void fan_set_duty(uint8_t val);
-extern uint8_t fan_get_duty(void);
+extern void fan_set_duty(uint16_t val);
+extern uint16_t fan_get_duty(void);
 extern uint16_t fan_get_rpm(void);
+
+extern void fan_set_mode(bool val);
+extern bool fan_get_mode(void);
 
 extern void fan_init(void);
 

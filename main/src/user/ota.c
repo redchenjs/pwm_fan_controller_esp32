@@ -17,6 +17,8 @@
 
 #include "core/os.h"
 #include "core/app.h"
+#include "user/fan.h"
+#include "user/gui.h"
 #include "user/bt_app.h"
 #include "user/bt_spp.h"
 #include "user/ble_app.h"
@@ -187,7 +189,10 @@ void ota_exec(esp_spp_cb_param_t *param)
 #endif
                 ) {
                     if (!update_handle) {
-                        xEventGroupClearBits(user_event_group, INPUT_RUN_BIT);
+#ifdef CONFIG_ENABLE_GUI
+                        gui_set_mode(0);
+#endif
+                        fan_set_mode(0);
 
 #ifdef CONFIG_ENABLE_BLE_CONTROL_IF
                         esp_ble_gap_stop_advertising();
@@ -309,6 +314,9 @@ void ota_end(void)
         esp_ble_gap_start_advertising(&adv_params);
 #endif
 
-        xEventGroupSetBits(user_event_group, INPUT_RUN_BIT);
+        fan_set_mode(1);
+#ifdef CONFIG_ENABLE_GUI
+        gui_set_mode(1);
+#endif
     }
 }
