@@ -389,7 +389,10 @@ void fan_set_mode(bool val)
 #endif
         fan_set_duty(duty_set);
         gpio_intr_enable(CONFIG_FAN_IN_PIN);
+
+        timer_start(TIMER_GROUP_0, TIMER_0);
         timer_enable_intr(TIMER_GROUP_0, TIMER_0);
+
         xEventGroupSetBits(user_event_group, FAN_RUN_BIT);
     } else {
 #ifdef CONFIG_ENABLE_QC
@@ -397,7 +400,10 @@ void fan_set_mode(bool val)
 #endif
         fan_set_duty(0);
         gpio_intr_disable(CONFIG_FAN_IN_PIN);
+
+        timer_pause(TIMER_GROUP_0, TIMER_0);
         timer_disable_intr(TIMER_GROUP_0, TIMER_0);
+
         xEventGroupClearBits(user_event_group, FAN_RUN_BIT);
     }
 
