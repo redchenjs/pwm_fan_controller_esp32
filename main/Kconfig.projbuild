@@ -50,6 +50,19 @@ config ENABLE_ENCODER
     help
         Select this to enable encoder input.
 
+choice EC_TYPE
+    prompt "Encoder Type"
+    default EC_TYPE_1P2D
+    depends on ENABLE_ENCODER
+    help
+        Select the encoder type.
+
+    config EC_TYPE_1P1D
+        bool "1-Pulse 1-Detent"
+    config EC_TYPE_1P2D
+        bool "1-Pulse 2-Detents"
+endchoice
+
 config EC_PHASE_A_PIN
     int "Encoder Phase A Pin"
     default 21

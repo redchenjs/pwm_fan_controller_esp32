@@ -39,7 +39,9 @@ static void key_task(void *pvParameter)
     portTickType xLastWakeTime;
     bool phase_a_p = false;
     bool phase_a_n = false;
+#ifdef CONFIG_EC_TYPE_1P2D
     bool phase_b_p = false;
+#endif
     bool phase_b_n = false;
     bool button_n  = false;
     uint32_t fan_evt = 0;
@@ -66,6 +68,15 @@ static void key_task(void *pvParameter)
         fan_evt = EC_EVT_N;
 
         if (phase_a_n != phase_a_p) {
+#ifdef CONFIG_EC_TYPE_1P1D
+            if (!phase_a_n) {
+                if (phase_b_n) {
+                    fan_evt = EC_EVT_I;
+                } else {
+                    fan_evt = EC_EVT_D;
+                }
+            }
+#else
             if (phase_a_n) {
                 if (phase_b_p & !phase_b_n) {
                     fan_evt = EC_EVT_I;
@@ -93,9 +104,9 @@ static void key_task(void *pvParameter)
                     fan_evt = EC_EVT_I;
                 }
             }
-
-            phase_a_p = phase_a_n;
             phase_b_p = phase_b_n;
+#endif
+            phase_a_p = phase_a_n;
         }
 
         if (!button_n) {
