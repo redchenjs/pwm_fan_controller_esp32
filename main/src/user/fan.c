@@ -11,25 +11,18 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-#include "driver/adc.h"
-#include "driver/dac.h"
+#include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "driver/timer.h"
 
 #include "core/os.h"
+#include "user/qc.h"
 #include "user/fan.h"
+#include "user/key.h"
 
-#define QC_TAG  "qc"
-#define FAN_TAG "fan"
-#define KEY_TAG "key"
+#define TAG "fan"
 
-enum qc_idx {
-    QC_IDX_5V  = 0x0,
-    QC_IDX_9V  = 0x1,
-    QC_IDX_12V = 0x2,
-
-    QC_IDX_MAX
-};
+xQueueHandle fan_evt_queue = NULL;
 
 static bool fan_mode = true;
 static uint16_t duty_set = 0;
@@ -38,71 +31,6 @@ static uint16_t fan_rpm = 0;
 static double time_val = 0.0;
 static bool first_edge = true;
 static bool period_done = true;
-static xQueueHandle fan_evt_queue = NULL;
-
-#ifdef CONFIG_ENABLE_QC
-static void qc_init(uint8_t qc_vol)
-{
-    int dp_raw = 0, dp_cnt = 0;
-
-    dac_output_voltage(DAC_CHANNEL_1, 0);
-    dac_output_voltage(DAC_CHANNEL_2, 0);
-    dac_output_disable(DAC_CHANNEL_1);
-    dac_output_disable(DAC_CHANNEL_2);
-
-    vTaskDelay(1250 / portTICK_RATE_MS);
-
-    adc2_config_channel_atten(ADC_CHANNEL_9, ADC_ATTEN_DB_0);
-
-    dac_output_enable(DAC_CHANNEL_1);
-    dac_output_voltage(DAC_CHANNEL_1, 255 * (0.325 / 3.3));
-
-    adc2_get_raw(ADC_CHANNEL_9, ADC_WIDTH_BIT_12, &dp_raw);
-
-    if (dp_raw < 100) {
-        ESP_LOGI(QC_TAG, "SDP 5V");
-        dac_output_disable(DAC_CHANNEL_1);
-        return;
-    }
-
-    vTaskDelay(1250 / portTICK_RATE_MS);
-
-    do {
-        adc2_get_raw(ADC_CHANNEL_9, ADC_WIDTH_BIT_12, &dp_raw);
-
-        vTaskDelay(10 / portTICK_RATE_MS);
-    } while (dp_raw > 100 && ++dp_cnt < 100);
-
-    if (dp_raw > 100) {
-        ESP_LOGI(QC_TAG, "DCP 5V");
-        return;
-    }
-
-    switch (qc_vol) {
-        case QC_IDX_5V:
-            ESP_LOGI(QC_TAG, "QC 2.0 5V");
-            dac_output_enable(DAC_CHANNEL_2);
-            dac_output_voltage(DAC_CHANNEL_1, 255 * (0.6 / 3.3));
-            dac_output_voltage(DAC_CHANNEL_2, 255 * (0.0 / 3.3));
-            break;
-        case QC_IDX_9V:
-            ESP_LOGI(QC_TAG, "QC 2.0 9V");
-            dac_output_enable(DAC_CHANNEL_2);
-            dac_output_voltage(DAC_CHANNEL_1, 255 * (3.3 / 3.3));
-            dac_output_voltage(DAC_CHANNEL_2, 255 * (0.6 / 3.3));
-            break;
-        case QC_IDX_12V:
-            ESP_LOGI(QC_TAG, "QC 2.0 12V");
-            dac_output_enable(DAC_CHANNEL_2);
-            dac_output_voltage(DAC_CHANNEL_1, 255 * (0.6 / 3.3));
-            dac_output_voltage(DAC_CHANNEL_2, 255 * (0.6 / 3.3));
-            break;
-        default:
-            ESP_LOGI(QC_TAG, "DCP 5V");
-            break;
-    }
-}
-#endif
 
 static void IRAM_ATTR tim_isr_handler(void *arg)
 {
@@ -173,14 +101,6 @@ static void pin_init(void)
 
     gpio_install_isr_service(0);
     gpio_isr_handler_add(CONFIG_FAN_IN_PIN, fan_isr_handler, NULL);
-
-#ifdef CONFIG_ENABLE_INPUT
-    io_conf.pin_bit_mask = BIT64(CONFIG_PHASE_A_PIN) |
-                           BIT64(CONFIG_PHASE_B_PIN) |
-                           BIT64(CONFIG_BUTTON_PIN);
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    gpio_config(&io_conf);
-#endif
 }
 
 static void pwm_init(void)
@@ -217,7 +137,7 @@ static void fan_task(void *pvParameter)
     pin_init();
     pwm_init();
 
-    ESP_LOGI(FAN_TAG, "started.");
+    ESP_LOGI(TAG, "started.");
 
     while (1) {
         xEventGroupWaitBits(
@@ -230,26 +150,26 @@ static void fan_task(void *pvParameter)
 
         if (xQueueReceive(fan_evt_queue, &fan_evt, 500 / portTICK_RATE_MS)) {
             switch (fan_evt) {
-#ifdef CONFIG_ENABLE_INPUT
-                case 1: {
+#ifdef CONFIG_ENABLE_ENCODER
+                case EC_EVT_I: {
                     int16_t duty_tmp = fan_duty + 1;
                     duty_set = (duty_tmp < 255) ? duty_tmp : 255;
                     fan_set_duty(duty_set);
                     break;
                 }
-                case 2: {
+                case EC_EVT_D: {
                     int16_t duty_tmp = fan_duty - 1;
                     duty_set = (duty_tmp > 0) ? duty_tmp : 0;
                     fan_set_duty(duty_set);
                     break;
                 }
-                case 3: {
+                case EC_EVT_I_B: {
                     int16_t duty_tmp = fan_duty + 10;
                     duty_set = (duty_tmp < 255) ? duty_tmp : 255;
                     fan_set_duty(duty_set);
                     break;
                 }
-                case 4: {
+                case EC_EVT_D_B: {
                     int16_t duty_tmp = fan_duty - 10;
                     duty_set = (duty_tmp > 0) ? duty_tmp : 0;
                     fan_set_duty(duty_set);
@@ -280,87 +200,6 @@ static void fan_task(void *pvParameter)
         }
     }
 }
-
-#ifdef CONFIG_ENABLE_INPUT
-static void key_task(void *pvParameter)
-{
-    portTickType xLastWakeTime;
-    bool phase_a_p = false;
-    bool phase_a_n = false;
-    bool phase_b_p = false;
-    bool phase_b_n = false;
-    bool button_n  = false;
-    uint32_t fan_evt = 0;
-
-    ESP_LOGI(KEY_TAG, "started.");
-
-    while (1) {
-        xEventGroupWaitBits(
-            user_event_group,
-            FAN_RUN_BIT,
-            pdFALSE,
-            pdFALSE,
-            portMAX_DELAY
-        );
-
-        xLastWakeTime = xTaskGetTickCount();
-
-        phase_a_n = gpio_get_level(CONFIG_PHASE_A_PIN);
-        phase_b_n = gpio_get_level(CONFIG_PHASE_B_PIN);
-        button_n  = gpio_get_level(CONFIG_BUTTON_PIN);
-
-        fan_evt = 0;
-
-        if (phase_a_n != phase_a_p) {
-            if (phase_a_n) {
-                if (phase_b_p & !phase_b_n) {
-                    fan_evt = 1;
-                }
-                if (!phase_b_p & phase_b_n) {
-                    fan_evt = 2;
-                }
-                if ((phase_b_p == phase_b_n) & !phase_b_n) {
-                    fan_evt = 1;
-                }
-                if ((phase_b_p == phase_b_n) & phase_b_n) {
-                    fan_evt = 2;
-                }
-            } else {
-                if (phase_b_p & !phase_b_n) {
-                    fan_evt = 2;
-                }
-                if (!phase_b_p & phase_b_n) {
-                    fan_evt = 1;
-                }
-                if ((phase_b_p == phase_b_n) & !phase_b_n) {
-                    fan_evt = 2;
-                }
-                if ((phase_b_p == phase_b_n) & phase_b_n) {
-                    fan_evt = 1;
-                }
-            }
-
-            phase_a_p = phase_a_n;
-            phase_b_p = phase_b_n;
-        }
-
-        if (!button_n) {
-            if (fan_evt == 1) {
-                fan_evt = 3;
-            }
-            if (fan_evt == 2) {
-                fan_evt = 4;
-            }
-        }
-
-        if (fan_evt) {
-            xQueueSend(fan_evt_queue, &fan_evt, portMAX_DELAY);
-        }
-
-        vTaskDelayUntil(&xLastWakeTime, 1 / portTICK_RATE_MS);
-    }
-}
-#endif
 
 void fan_set_duty(uint16_t val)
 {
@@ -407,7 +246,7 @@ void fan_set_mode(bool val)
         xEventGroupClearBits(user_event_group, FAN_RUN_BIT);
     }
 
-    ESP_LOGI(FAN_TAG, "mode: %u", fan_mode);
+    ESP_LOGI(TAG, "mode: %u", fan_mode);
 }
 
 bool fan_get_mode(void)
@@ -421,12 +260,5 @@ void fan_init(void)
 
     fan_evt_queue = xQueueCreate(10, sizeof(uint32_t));
 
-#ifdef CONFIG_ENABLE_QC
-    qc_init(QC_IDX_12V);
-#endif
-
     xTaskCreatePinnedToCore(fan_task, "fanT", 1920, NULL, 7, NULL, 1);
-#ifdef CONFIG_ENABLE_INPUT
-    xTaskCreatePinnedToCore(key_task, "keyT", 1920, NULL, 8, NULL, 1);
-#endif
 }

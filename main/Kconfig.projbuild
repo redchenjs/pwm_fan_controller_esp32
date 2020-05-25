@@ -43,27 +43,27 @@ config ENABLE_BLE_CONTROL_IF
         Select this to enable BLE Control Interface.
 endmenu
 
-menu "Input Configuration"
-config ENABLE_INPUT
-    bool "Enable Input"
+menu "Key Configuration"
+config ENABLE_ENCODER
+    bool "Enable Encoder"
     default y
     help
-        Select this to enable Input.
+        Select this to enable encoder input.
 
-config PHASE_A_PIN
-    int "Phase A Pin"
+config EC_PHASE_A_PIN
+    int "Encoder Phase A Pin"
     default 21
-    depends on ENABLE_INPUT
+    depends on ENABLE_ENCODER
 
-config PHASE_B_PIN
-    int "Phase B Pin"
+config EC_PHASE_B_PIN
+    int "Encoder Phase B Pin"
     default 22
-    depends on ENABLE_INPUT
+    depends on ENABLE_ENCODER
 
-config BUTTON_PIN
-    int "Button Pin"
+config EC_BUTTON_PIN
+    int "Encoder Button Pin"
     default 32
-    depends on ENABLE_INPUT
+    depends on ENABLE_ENCODER
 endmenu
 
 menu "GUI Configuration"

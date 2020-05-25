@@ -10,6 +10,11 @@
 
 #include <stdint.h>
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+
+extern xQueueHandle fan_evt_queue;
+
 extern void fan_set_duty(uint16_t val);
 extern uint16_t fan_get_duty(void);
 extern uint16_t fan_get_rpm(void);
