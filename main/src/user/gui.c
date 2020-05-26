@@ -13,6 +13,7 @@
 #include "gfx.h"
 
 #include "core/os.h"
+#include "user/qc.h"
 #include "user/fan.h"
 
 #define TAG "gui"
@@ -34,11 +35,14 @@ static void gui_task(void *pvParameter)
 
     ESP_LOGI(TAG, "started.");
 
-    snprintf(text_buff, sizeof(text_buff), "SET:");
-    gdispGFillStringBox(gui_gdisp, 25, 25, 80, 40, text_buff, gui_font, Red, Black, justifyLeft);
+    snprintf(text_buff, sizeof(text_buff), "PWM:");
+    gdispGFillStringBox(gui_gdisp, 5, 4, 90, 42, text_buff, gui_font, Yellow, Black, justifyLeft);
 
     snprintf(text_buff, sizeof(text_buff), "RPM:");
-    gdispGFillStringBox(gui_gdisp, 25, 75, 80, 40, text_buff, gui_font, Lime, Black, justifyLeft);
+    gdispGFillStringBox(gui_gdisp, 5, 46, 90, 42, text_buff, gui_font, Aqua, Black, justifyLeft);
+
+    snprintf(text_buff, sizeof(text_buff), "PWR:");
+    gdispGFillStringBox(gui_gdisp, 5, 88, 90, 42, text_buff, gui_font, Fuchsia, Black, justifyLeft);
 
     while (1) {
         if (gui_mode) {
@@ -52,10 +56,13 @@ static void gui_task(void *pvParameter)
             gdispGSetBacklight(gui_gdisp, 255);
 
             snprintf(text_buff, sizeof(text_buff), "%u", fan_get_duty());
-            gdispGFillStringBox(gui_gdisp, 110, 25, 105, 40, text_buff, gui_font, Red, Black, justifyRight);
+            gdispGFillStringBox(gui_gdisp, 95, 4, 140, 42, text_buff, gui_font, Yellow, Black, justifyRight);
 
             snprintf(text_buff, sizeof(text_buff), "%u", fan_get_rpm());
-            gdispGFillStringBox(gui_gdisp, 110, 75, 105, 40, text_buff, gui_font, Lime, Black, justifyRight);
+            gdispGFillStringBox(gui_gdisp, 95, 46, 140, 42, text_buff, gui_font, Aqua, Black, justifyRight);
+
+            snprintf(text_buff, sizeof(text_buff), "%s", qc_get_mode_str());
+            gdispGFillStringBox(gui_gdisp, 95, 88, 140, 42, text_buff, gui_font, Fuchsia, Black, justifyRight);
 
             gdispGFlush(gui_gdisp);
 
