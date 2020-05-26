@@ -82,7 +82,7 @@ static void tim_init(void)
     };
     timer_init(TIMER_GROUP_0, TIMER_0, &tim_conf);
 
-    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 750000ULL);
+    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 800000ULL);
 
     timer_enable_intr(TIMER_GROUP_0, TIMER_0);
     timer_isr_register(TIMER_GROUP_0, TIMER_0, tim_isr_handler, NULL, ESP_INTR_FLAG_IRAM, NULL);
@@ -177,10 +177,10 @@ static void fan_task(void *pvParameter)
                 }
 #endif
                 case 0xff:
-                    if (rpm_cnt++ == 5) {
+                    if (rpm_cnt++ == 4) {
                         rpm_cnt = 0;
 
-                        fan_rpm = rpm_sum / 5.0;
+                        fan_rpm = rpm_sum / 4.0;
 
                         rpm_sum = 0.0;
                     } else {
