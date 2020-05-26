@@ -17,10 +17,10 @@
 
 #define TAG "qc"
 
-#ifdef CONFIG_ENABLE_QC
-static qc_idx_t qc_mode = QC_IDX_SDP;
+static qc_idx_t qc_mode = QC_IDX_DC;
 
 static char qc_mode_str[][8] = {
+    "DC",
     "SDP 5V",
     "DCP 5V",
     "QC2 5V",
@@ -109,4 +109,3 @@ void qc_init(qc_idx_t idx)
 qc_exit:
     ESP_LOGI(TAG, "%s", qc_get_mode_str());
 }
-#endif
