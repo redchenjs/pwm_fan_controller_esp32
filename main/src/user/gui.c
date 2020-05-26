@@ -13,7 +13,7 @@
 #include "gfx.h"
 
 #include "core/os.h"
-#include "user/qc.h"
+#include "user/pwr.h"
 #include "user/fan.h"
 
 #define TAG "gui"
@@ -61,7 +61,7 @@ static void gui_task(void *pvParameter)
             snprintf(text_buff, sizeof(text_buff), "%u", fan_get_rpm());
             gdispGFillStringBox(gui_gdisp, 95, 46, 140, 42, text_buff, gui_font, Aqua, Black, justifyRight);
 
-            snprintf(text_buff, sizeof(text_buff), "%s", qc_get_mode_str());
+            snprintf(text_buff, sizeof(text_buff), "%s", pwr_get_mode_str());
             gdispGFillStringBox(gui_gdisp, 95, 88, 140, 42, text_buff, gui_font, Fuchsia, Black, justifyRight);
 
             gdispGFlush(gui_gdisp);

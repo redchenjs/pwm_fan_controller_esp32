@@ -13,7 +13,7 @@
 #include "chip/spi.h"
 #include "chip/i2c.h"
 
-#include "user/qc.h"
+#include "user/pwr.h"
 #include "user/fan.h"
 #include "user/gui.h"
 #include "user/key.h"
@@ -47,7 +47,7 @@ static void board_init(void) {}
 static void user_init(void)
 {
 #ifdef CONFIG_ENABLE_QC
-    qc_init(QC_IDX_12V);
+    pwr_init(PWR_IDX_QC_12V);
 #endif
 
     fan_init();

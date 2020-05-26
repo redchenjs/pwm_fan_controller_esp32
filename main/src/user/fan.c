@@ -16,7 +16,7 @@
 #include "driver/timer.h"
 
 #include "core/os.h"
-#include "user/qc.h"
+#include "user/pwr.h"
 #include "user/fan.h"
 #include "user/key.h"
 
@@ -224,7 +224,7 @@ void fan_set_mode(bool val)
 
     if (fan_mode) {
 #ifdef CONFIG_ENABLE_QC
-        qc_init(QC_IDX_12V);
+        pwr_init(PWR_IDX_QC_12V);
 #endif
         fan_set_duty(duty_set);
         gpio_intr_enable(CONFIG_FAN_IN_PIN);
@@ -235,7 +235,7 @@ void fan_set_mode(bool val)
         xEventGroupSetBits(user_event_group, FAN_RUN_BIT);
     } else {
 #ifdef CONFIG_ENABLE_QC
-        qc_init(QC_IDX_5V);
+        pwr_init(PWR_IDX_QC_5V);
 #endif
         fan_set_duty(0);
         gpio_intr_disable(CONFIG_FAN_IN_PIN);
