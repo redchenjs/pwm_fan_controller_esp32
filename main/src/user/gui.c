@@ -46,11 +46,6 @@ static void gui_task(void *pvParameter)
 
     while (1) {
         if (gui_mode) {
-            if (xEventGroupGetBits(user_event_group) & GUI_RELOAD_BIT) {
-                xEventGroupClearBits(user_event_group, GUI_RELOAD_BIT);
-                continue;
-            }
-
             xLastWakeTime = xTaskGetTickCount();
 
             gdispGSetBacklight(gui_gdisp, 255);
@@ -68,6 +63,10 @@ static void gui_task(void *pvParameter)
 
             vTaskDelayUntil(&xLastWakeTime, 16 / portTICK_RATE_MS);
         } else {
+            if (xEventGroupGetBits(user_event_group) & GUI_RELOAD_BIT) {
+                xEventGroupClearBits(user_event_group, GUI_RELOAD_BIT);
+            }
+
             gdispGSetBacklight(gui_gdisp, 0);
 
             xEventGroupWaitBits(
@@ -85,11 +84,7 @@ void gui_set_mode(bool val)
 {
     gui_mode = val;
 
-    if (gui_mode) {
-        xEventGroupSetBits(user_event_group, GUI_RELOAD_BIT);
-    } else {
-        xEventGroupClearBits(user_event_group, GUI_RELOAD_BIT);
-    }
+    xEventGroupSetBits(user_event_group, GUI_RELOAD_BIT);
 
     ESP_LOGI(TAG, "mode: %u", gui_mode);
 }
@@ -101,7 +96,5 @@ bool gui_get_mode(void)
 
 void gui_init(void)
 {
-    xEventGroupSetBits(user_event_group, GUI_RELOAD_BIT);
-
     xTaskCreatePinnedToCore(gui_task, "guiT", 1920, NULL, 7, NULL, 0);
 }
