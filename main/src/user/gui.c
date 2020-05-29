@@ -69,7 +69,7 @@ static void gui_task(void *pvParameter)
 
             gdispGFlush(gui_gdisp);
 
-            vTaskDelayUntil(&xLastWakeTime, 20 / portTICK_RATE_MS);
+            vTaskDelayUntil(&xLastWakeTime, 25 / portTICK_RATE_MS);
         } else {
             if (xEventGroupGetBits(user_event_group) & GUI_RELOAD_BIT) {
                 xEventGroupClearBits(user_event_group, GUI_RELOAD_BIT);
