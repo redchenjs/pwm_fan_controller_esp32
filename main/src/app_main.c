@@ -13,6 +13,8 @@
 #include "chip/spi.h"
 #include "chip/i2c.h"
 
+#include "board/ina219.h"
+
 #include "user/pwr.h"
 #include "user/fan.h"
 #include "user/gui.h"
@@ -42,7 +44,12 @@ static void chip_init(void)
 #endif
 }
 
-static void board_init(void) {}
+static void board_init(void)
+{
+#ifdef CONFIG_ENABLE_POWER_MONITOR
+    ina219_init();
+#endif
+}
 
 static void user_init(void)
 {

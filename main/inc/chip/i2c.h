@@ -1,5 +1,5 @@
 /*
- * i2c.c
+ * i2c.h
  *
  *  Created on: 2019-04-18 20:26
  *      Author: Jack Chen <redchenjs@live.com>

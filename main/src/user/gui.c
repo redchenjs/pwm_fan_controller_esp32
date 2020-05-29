@@ -13,6 +13,8 @@
 #include "gfx.h"
 
 #include "core/os.h"
+#include "board/ina219.h"
+
 #include "user/pwr.h"
 #include "user/fan.h"
 
@@ -36,13 +38,13 @@ static void gui_task(void *pvParameter)
     ESP_LOGI(TAG, "started.");
 
     snprintf(text_buff, sizeof(text_buff), "PWM:");
-    gdispGFillStringBox(gui_gdisp, 5, 4, 90, 42, text_buff, gui_font, Yellow, Black, justifyLeft);
+    gdispGFillStringBox(gui_gdisp, 5, 2, 90, 32, text_buff, gui_font, Yellow, Black, justifyLeft);
 
     snprintf(text_buff, sizeof(text_buff), "RPM:");
-    gdispGFillStringBox(gui_gdisp, 5, 46, 90, 42, text_buff, gui_font, Aqua, Black, justifyLeft);
+    gdispGFillStringBox(gui_gdisp, 5, 34, 90, 32, text_buff, gui_font, Cyan, Black, justifyLeft);
 
     snprintf(text_buff, sizeof(text_buff), "PWR:");
-    gdispGFillStringBox(gui_gdisp, 5, 88, 90, 42, text_buff, gui_font, Fuchsia, Black, justifyLeft);
+    gdispGFillStringBox(gui_gdisp, 5, 67, 90, 32, text_buff, gui_font, Magenta, Black, justifyLeft);
 
     while (1) {
         if (gui_mode) {
@@ -51,17 +53,23 @@ static void gui_task(void *pvParameter)
             gdispGSetBacklight(gui_gdisp, 255);
 
             snprintf(text_buff, sizeof(text_buff), "%u", fan_get_duty());
-            gdispGFillStringBox(gui_gdisp, 95, 4, 140, 42, text_buff, gui_font, Yellow, Black, justifyRight);
+            gdispGFillStringBox(gui_gdisp, 95, 2, 140, 32, text_buff, gui_font, Yellow, Black, justifyRight);
 
             snprintf(text_buff, sizeof(text_buff), "%u", fan_get_rpm());
-            gdispGFillStringBox(gui_gdisp, 95, 46, 140, 42, text_buff, gui_font, Aqua, Black, justifyRight);
+            gdispGFillStringBox(gui_gdisp, 95, 34, 140, 32, text_buff, gui_font, Cyan, Black, justifyRight);
 
             snprintf(text_buff, sizeof(text_buff), "%s", pwr_get_mode_str());
-            gdispGFillStringBox(gui_gdisp, 95, 88, 140, 42, text_buff, gui_font, Fuchsia, Black, justifyRight);
+            gdispGFillStringBox(gui_gdisp, 95, 67, 140, 32, text_buff, gui_font, Magenta, Black, justifyRight);
+
+            snprintf(text_buff, sizeof(text_buff), "%5.2fV", ina219_get_bus_voltage_v());
+            gdispGFillStringBox(gui_gdisp, 5, 100, 115, 32, text_buff, gui_font, Lime, Black, justifyRight);
+
+            snprintf(text_buff, sizeof(text_buff), "%4.2fA", ina219_get_current_ma() / 1000.0);
+            gdispGFillStringBox(gui_gdisp, 120, 100, 115, 32, text_buff, gui_font, Orange, Black, justifyRight);
 
             gdispGFlush(gui_gdisp);
 
-            vTaskDelayUntil(&xLastWakeTime, 16 / portTICK_RATE_MS);
+            vTaskDelayUntil(&xLastWakeTime, 20 / portTICK_RATE_MS);
         } else {
             if (xEventGroupGetBits(user_event_group) & GUI_RELOAD_BIT) {
                 xEventGroupClearBits(user_event_group, GUI_RELOAD_BIT);

@@ -12,10 +12,10 @@ endmenu
 
 menu "Power Configuration"
 config ENABLE_QC
-    bool "Enable QuickCharge"
+    bool "Enable Quick Charge"
     default y
     help
-        Enable QuickCharge feature.
+        Enable quick charge feature.
 
 config ENABLE_POWER_MONITOR
     bool "Enable Power Monitor"
