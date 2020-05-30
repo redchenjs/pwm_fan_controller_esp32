@@ -5,6 +5,7 @@
  *      Author: Jack Chen <redchenjs@live.com>
  */
 
+#include <math.h>
 #include <stdio.h>
 
 #include "esp_log.h"
@@ -22,8 +23,15 @@
 
 GDisplay *gui_gdisp = NULL;
 
+static GTimer gui_flush_timer;
+
 static bool gui_mode = true;
 static char text_buff[32] = {0};
+
+static void gui_flush_task(void *pvParameter)
+{
+    gdispGFlush(gui_gdisp);
+}
 
 static void gui_task(void *pvParameter)
 {
@@ -34,6 +42,8 @@ static void gui_task(void *pvParameter)
 
     gui_gdisp = gdispGetDisplay(0);
     gui_font = gdispOpenFont("DejaVuSans32");
+
+    gtimerStart(&gui_flush_timer, gui_flush_task, NULL, TRUE, TIME_INFINITE);
 
     ESP_LOGI(TAG, "started.");
 
@@ -52,7 +62,7 @@ static void gui_task(void *pvParameter)
 
             gdispGSetBacklight(gui_gdisp, 255);
 
-            snprintf(text_buff, sizeof(text_buff), "%u", fan_get_duty());
+            snprintf(text_buff, sizeof(text_buff), "%u%s", fan_get_duty(), fan_env_saved() ? "" : "*");
             gdispGFillStringBox(gui_gdisp, 95, 2, 143, 32, text_buff, gui_font, Yellow, Black, justifyRight);
 
             snprintf(text_buff, sizeof(text_buff), "%u", fan_get_rpm());
@@ -61,15 +71,25 @@ static void gui_task(void *pvParameter)
             snprintf(text_buff, sizeof(text_buff), "%s", pwr_get_mode_str());
             gdispGFillStringBox(gui_gdisp, 95, 67, 143, 32, text_buff, gui_font, Magenta, Black, justifyRight);
 
-            snprintf(text_buff, sizeof(text_buff), "%5.2fV", ina219_get_bus_voltage_v());
+            float voltage = ina219_get_bus_voltage_mv() * 0.001;
+            if (voltage < 10.00) {
+                snprintf(text_buff, sizeof(text_buff), "%4.3fV", fabs(voltage));
+            } else {
+                snprintf(text_buff, sizeof(text_buff), "%4.2fV", fabs(voltage));
+            }
             gdispGFillStringBox(gui_gdisp, 2, 100, 118, 32, text_buff, gui_font, Lime, Black, justifyRight);
 
-            snprintf(text_buff, sizeof(text_buff), "%5.3fA", ina219_get_current_ma() / 1000.0);
-            gdispGFillStringBox(gui_gdisp, 120, 100, 118, 32, text_buff, gui_font, Orange, Black, justifyRight);
+            float current = ina219_get_current_ma() * 0.001;
+            snprintf(text_buff, sizeof(text_buff), "%4.3fA", fabs(current));
+            if (current < 0.000) {
+                gdispGFillStringBox(gui_gdisp, 120, 100, 118, 32, text_buff, gui_font, SkyBlue, Black, justifyRight);
+            } else {
+                gdispGFillStringBox(gui_gdisp, 120, 100, 118, 32, text_buff, gui_font, Orange, Black, justifyRight);
+            }
 
-            gdispGFlush(gui_gdisp);
+            gtimerJab(&gui_flush_timer);
 
-            vTaskDelayUntil(&xLastWakeTime, 25 / portTICK_RATE_MS);
+            vTaskDelayUntil(&xLastWakeTime, 20 / portTICK_RATE_MS);
         } else {
             if (xEventGroupGetBits(user_event_group) & GUI_RELOAD_BIT) {
                 xEventGroupClearBits(user_event_group, GUI_RELOAD_BIT);
@@ -104,5 +124,5 @@ bool gui_get_mode(void)
 
 void gui_init(void)
 {
-    xTaskCreatePinnedToCore(gui_task, "guiT", 1920, NULL, 7, NULL, 0);
+    xTaskCreatePinnedToCore(gui_task, "guiT", 1920, NULL, 7, NULL, 1);
 }

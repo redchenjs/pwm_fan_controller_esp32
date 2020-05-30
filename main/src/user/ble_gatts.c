@@ -135,7 +135,7 @@ static void profile_fan_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
         rsp.attr_value.handle = param->read.handle;
         rsp.attr_value.len = 8;
 
-        rsp.attr_value.value[0] = 0b0010;
+        rsp.attr_value.value[0] = 0x02;
         rsp.attr_value.value[1] = 0x00;
         rsp.attr_value.value[2] = 0x00;
         rsp.attr_value.value[3] = 0x00;

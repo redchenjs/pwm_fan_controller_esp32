@@ -16,6 +16,7 @@
 #include "driver/timer.h"
 
 #include "core/os.h"
+#include "core/app.h"
 #include "user/pwr.h"
 #include "user/fan.h"
 #include "user/key.h"
@@ -25,9 +26,12 @@
 xQueueHandle fan_evt_queue = NULL;
 
 static bool fan_mode = true;
-static uint16_t duty_set = 0;
-static uint16_t fan_duty = 0;
 static uint16_t fan_rpm = 0;
+static uint16_t fan_duty = 0;
+
+static uint8_t env_cnt = 0;
+static bool env_saved = true;
+
 static double time_val = 0.0;
 static bool first_edge = true;
 static bool period_done = true;
@@ -125,6 +129,7 @@ static void pwm_init(void)
     ledc_channel_config(&ledc_channel);
 
     ledc_fade_func_install(0);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_duty, 0);
 }
 
 static void fan_task(void *pvParameter)
@@ -153,26 +158,22 @@ static void fan_task(void *pvParameter)
 #ifdef CONFIG_ENABLE_ENCODER
                 case EC_EVT_I: {
                     int16_t duty_tmp = fan_duty + 1;
-                    duty_set = (duty_tmp < 255) ? duty_tmp : 255;
-                    fan_set_duty(duty_set);
+                    fan_set_duty((duty_tmp < 255) ? duty_tmp : 255);
                     break;
                 }
                 case EC_EVT_D: {
                     int16_t duty_tmp = fan_duty - 1;
-                    duty_set = (duty_tmp > 0) ? duty_tmp : 0;
-                    fan_set_duty(duty_set);
+                    fan_set_duty((duty_tmp > 0) ? duty_tmp : 0);
                     break;
                 }
                 case EC_EVT_I_B: {
                     int16_t duty_tmp = fan_duty + 10;
-                    duty_set = (duty_tmp < 255) ? duty_tmp : 255;
-                    fan_set_duty(duty_set);
+                    fan_set_duty((duty_tmp < 255) ? duty_tmp : 255);
                     break;
                 }
                 case EC_EVT_D_B: {
                     int16_t duty_tmp = fan_duty - 10;
-                    duty_set = (duty_tmp > 0) ? duty_tmp : 0;
-                    fan_set_duty(duty_set);
+                    fan_set_duty((duty_tmp > 0) ? duty_tmp : 0);
                     break;
                 }
 #endif
@@ -198,14 +199,26 @@ static void fan_task(void *pvParameter)
             rpm_cnt = 0;
             rpm_sum = 0.0;
         }
+
+        if (!env_saved && env_cnt++ == 50) {
+            env_cnt = 0;
+
+            env_saved = true;
+            app_setenv("FAN_INIT_CFG", &fan_duty, sizeof(fan_duty));
+        }
     }
 }
 
 void fan_set_duty(uint16_t val)
 {
-    fan_duty = val;
+    if (fan_duty != val) {
+        fan_duty = val;
 
-    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_duty, 0);
+        env_saved = false;
+        ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_duty, 0);
+    }
+
+    env_cnt = 0;
 }
 
 uint16_t fan_get_duty(void)
@@ -223,27 +236,31 @@ void fan_set_mode(bool val)
     fan_mode = val;
 
     if (fan_mode) {
+        xEventGroupSetBits(user_event_group, FAN_RUN_BIT);
+
 #ifdef CONFIG_ENABLE_QC
         pwr_init(PWR_IDX_QC_12V);
 #endif
-        fan_set_duty(duty_set);
+
         gpio_intr_enable(CONFIG_FAN_IN_PIN);
 
         timer_start(TIMER_GROUP_0, TIMER_0);
         timer_enable_intr(TIMER_GROUP_0, TIMER_0);
 
-        xEventGroupSetBits(user_event_group, FAN_RUN_BIT);
+        ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_duty, 0);
     } else {
+        xEventGroupClearBits(user_event_group, FAN_RUN_BIT);
+
 #ifdef CONFIG_ENABLE_QC
         pwr_init(PWR_IDX_QC_5V);
 #endif
-        fan_set_duty(0);
+
         gpio_intr_disable(CONFIG_FAN_IN_PIN);
 
         timer_pause(TIMER_GROUP_0, TIMER_0);
         timer_disable_intr(TIMER_GROUP_0, TIMER_0);
 
-        xEventGroupClearBits(user_event_group, FAN_RUN_BIT);
+        ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, 0, 0);
     }
 
     ESP_LOGI(TAG, "mode: %u", fan_mode);
@@ -254,9 +271,17 @@ bool fan_get_mode(void)
     return fan_mode;
 }
 
+bool fan_env_saved(void)
+{
+    return env_saved;
+}
+
 void fan_init(void)
 {
     xEventGroupSetBits(user_event_group, FAN_RUN_BIT);
+
+    size_t length = sizeof(fan_duty);
+    app_getenv("FAN_INIT_CFG", &fan_duty, &length);
 
     fan_evt_queue = xQueueCreate(10, sizeof(uint32_t));
 

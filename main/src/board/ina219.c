@@ -221,9 +221,9 @@ float ina219_get_shunt_voltage_mv(void)
     return (ina219_get_shunt_voltage_raw() * 0.01);
 }
 
-float ina219_get_bus_voltage_v(void)
+float ina219_get_bus_voltage_mv(void)
 {
-    return (ina219_get_bus_voltage_raw() * 0.001);
+    return ina219_get_bus_voltage_raw();
 }
 
 float ina219_get_current_ma(void)

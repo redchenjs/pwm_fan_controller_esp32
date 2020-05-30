@@ -13,7 +13,7 @@ extern void ina219_set_calibration_32v_1a(void);
 extern void ina219_set_calibration_16v_400ma(void);
 
 extern float ina219_get_shunt_voltage_mv(void);
-extern float ina219_get_bus_voltage_v(void);
+extern float ina219_get_bus_voltage_mv(void);
 extern float ina219_get_current_ma(void);
 extern float ina219_get_power_mw(void);
 

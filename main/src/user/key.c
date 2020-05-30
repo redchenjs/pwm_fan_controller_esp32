@@ -39,16 +39,19 @@ static void key_task(void *pvParameter)
     portTickType xLastWakeTime;
     bool phase_a_p = false;
     bool phase_a_n = false;
-#ifdef CONFIG_EC_TYPE_1P2D
     bool phase_b_p = false;
-#endif
     bool phase_b_n = false;
+    bool button_p  = false;
     bool button_n  = false;
     uint32_t fan_evt = 0;
 
     pin_init();
 
     ESP_LOGI(TAG, "started.");
+
+    phase_a_n = gpio_get_level(CONFIG_EC_PHASE_A_PIN);
+    phase_b_n = gpio_get_level(CONFIG_EC_PHASE_B_PIN);
+    button_n  = gpio_get_level(CONFIG_EC_BUTTON_PIN);
 
     while (1) {
         xEventGroupWaitBits(
@@ -61,14 +64,20 @@ static void key_task(void *pvParameter)
 
         xLastWakeTime = xTaskGetTickCount();
 
+        fan_evt = EC_EVT_N;
+
+        phase_a_p = phase_a_n;
+        phase_b_p = phase_b_n;
+        button_p  = button_n;
+
         phase_a_n = gpio_get_level(CONFIG_EC_PHASE_A_PIN);
         phase_b_n = gpio_get_level(CONFIG_EC_PHASE_B_PIN);
         button_n  = gpio_get_level(CONFIG_EC_BUTTON_PIN);
 
-        fan_evt = EC_EVT_N;
-
-        if (phase_a_n != phase_a_p) {
+        if (phase_a_p != phase_a_n) {
 #ifdef CONFIG_EC_TYPE_1P1D
+            (void)phase_b_p;
+
             if (!phase_a_n) {
                 if (phase_b_n) {
                     fan_evt = EC_EVT_I;
@@ -104,18 +113,27 @@ static void key_task(void *pvParameter)
                     fan_evt = EC_EVT_I;
                 }
             }
-            phase_b_p = phase_b_n;
 #endif
-            phase_a_p = phase_a_n;
         }
 
-        if (!button_n) {
-            if (fan_evt == EC_EVT_I) {
-                fan_evt = EC_EVT_I_B;
-            }
-            if (fan_evt == EC_EVT_D) {
-                fan_evt = EC_EVT_D_B;
-            }
+        switch (fan_evt) {
+            case EC_EVT_N:
+                if (button_p & !button_n) {
+                    fan_evt = EC_EVT_N_B;
+                }
+                break;
+            case EC_EVT_I:
+                if (!button_n) {
+                    fan_evt = EC_EVT_I_B;
+                }
+                break;
+            case EC_EVT_D:
+                if (!button_n) {
+                    fan_evt = EC_EVT_D_B;
+                }
+                break;
+            default:
+                break;
         }
 
         if (fan_evt != EC_EVT_N) {

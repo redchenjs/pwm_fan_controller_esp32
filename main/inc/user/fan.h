@@ -22,6 +22,8 @@ extern uint16_t fan_get_rpm(void);
 extern void fan_set_mode(bool val);
 extern bool fan_get_mode(void);
 
+extern bool fan_env_saved(void);
+
 extern void fan_init(void);
 
 #endif /* INC_USER_FAN_H_ */
