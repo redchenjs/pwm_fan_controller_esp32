@@ -5,10 +5,10 @@
  *      Author: Jack Chen <redchenjs@live.com>
  */
 
-#include "esp_log.h"
+#include <string.h>
 
+#include "esp_log.h"
 #include "driver/i2c.h"
-#include "board/ina219.h"
 
 #define TAG "ina219"
 
@@ -21,74 +21,72 @@
 #define INA219_REG_CURRENT        0x04
 #define INA219_REG_CALIBRATION    0x05
 
-#define INA219_CONFIG_RESET_BIT   0x8000
+typedef union {
+    struct {
+        uint8_t mode:     3;
+        uint8_t sadc:     4;
+        uint8_t badc:     4;
+        uint8_t pg:       2;
+        uint8_t brng:     1;
+        uint8_t reserved: 1;
+        uint8_t rst:      1;
+    };
+    uint16_t val;
+} ina219_conf_t;
 
-enum bus_voltage_range_settings {
-    INA219_CONFIG_BUS_VOLTAGE_RANGE_16V = 0x0000,
-    INA219_CONFIG_BUS_VOLTAGE_RANGE_32V = 0x2000,
+enum brng_settings {
+    BRNG_16V_FSR = 0x0,
+    BRNG_32V_FSR = 0x1,
 };
 
-enum pg_bit_settings {
-    INA219_CONFIG_GAIN_1_40MV  = 0x0000,
-    INA219_CONFIG_GAIN_2_80MV  = 0x0800,
-    INA219_CONFIG_GAIN_4_160MV = 0x1000,
-    INA219_CONFIG_GAIN_8_320MV = 0x1800,
+enum pga_settings {
+    PGA_GAIN_1_40MV  = 0x0,
+    PGA_GAIN_2_80MV  = 0x1,
+    PGA_GAIN_4_160MV = 0x2,
+    PGA_GAIN_8_320MV = 0x3,
 };
 
-enum bus_adc_settings {
-    INA219_CONFIG_BUS_ADC_RES_9BIT             = 0x0000,
-    INA219_CONFIG_BUS_ADC_RES_10BIT            = 0x0080,
-    INA219_CONFIG_BUS_ADC_RES_11BIT            = 0x0100,
-    INA219_CONFIG_BUS_ADC_RES_12BIT            = 0x0180,
-    INA219_CONFIG_BUS_ADC_RES_12BIT_2S_1060US  = 0x0480,
-    INA219_CONFIG_BUS_ADC_RES_12BIT_4S_2130US  = 0x0500,
-    INA219_CONFIG_BUS_ADC_RES_12BIT_8S_4260US  = 0x0580,
-    INA219_CONFIG_BUS_ADC_RES_12BIT_16S_8510US = 0x0600,
-    INA219_CONFIG_BUS_ADC_RES_12BIT_32S_17MS   = 0x0680,
-    INA219_CONFIG_BUS_ADC_RES_12BIT_64S_34MS   = 0x0700,
-    INA219_CONFIG_BUS_ADC_RES_12BIT_128S_69MS  = 0x0780,
-};
-
-enum shunt_adc_settings {
-    INA219_CONFIG_SHUNT_ADC_RES_9BIT_1S_84US     = 0x0000,
-    INA219_CONFIG_SHUNT_ADC_RES_10BIT_1S_148US   = 0x0008,
-    INA219_CONFIG_SHUNT_ADC_RES_11BIT_1S_276US   = 0x0010,
-    INA219_CONFIG_SHUNT_ADC_RES_12BIT_1S_532US   = 0x0018,
-    INA219_CONFIG_SHUNT_ADC_RES_12BIT_2S_1060US  = 0x0048,
-    INA219_CONFIG_SHUNT_ADC_RES_12BIT_4S_2130US  = 0x0050,
-    INA219_CONFIG_SHUNT_ADC_RES_12BIT_8S_4260US  = 0x0058,
-    INA219_CONFIG_SHUNT_ADC_RES_12BIT_16S_8510US = 0x0060,
-    INA219_CONFIG_SHUNT_ADC_RES_12BIT_32S_17MS   = 0x0068,
-    INA219_CONFIG_SHUNT_ADC_RES_12BIT_64S_34MS   = 0x0070,
-    INA219_CONFIG_SHUNT_ADC_RES_12BIT_128S_69MS  = 0x0078,
+enum adc_settings {
+    ADC_RES_9BIT       = 0x0,
+    ADC_RES_10BIT      = 0x1,
+    ADC_RES_11BIT      = 0x2,
+    ADC_RES_12BIT      = 0x3,
+    ADC_RES_12BIT_2S   = 0x9,
+    ADC_RES_12BIT_4S   = 0xA,
+    ADC_RES_12BIT_8S   = 0xB,
+    ADC_RES_12BIT_16S  = 0xC,
+    ADC_RES_12BIT_32S  = 0xD,
+    ADC_RES_12BIT_64S  = 0xE,
+    ADC_RES_12BIT_128S = 0xF,
 };
 
 enum mode_settings {
-    INA219_CONFIG_MODE_POWER_DOWN                       = 0x00,
-    INA219_CONFIG_MODE_SHUNT_VOLTAGE_TRIGGERED          = 0x01,
-    INA219_CONFIG_MODE_BUS_VOLTAGE_TRIGGERED            = 0x02,
-    INA219_CONFIG_MODE_SHUNT_AND_BUS_VOLTAGE_TRIGGERED  = 0x03,
-    INA219_CONFIG_MODE_ADC_OFF                          = 0x04,
-    INA219_CONFIG_MODE_SHUNT_VOLTAGE_CONTINUOUS         = 0x05,
-    INA219_CONFIG_MODE_BUS_VOLTAGE_CONTINUOUS           = 0x06,
-    INA219_CONFIG_MODE_SHUNT_AND_BUS_VOLTAGE_CONTINUOUS = 0x07,
+    MODE_POWER_DOWN               = 0x0,
+    MODE_SHUNT_VOLTAGE_TRIGGERED  = 0x1,
+    MODE_BUS_VOLTAGE_TRIGGERED    = 0x2,
+    MODE_SHUNT_AND_BUS_TRIGGERED  = 0x3,
+    MODE_ADC_OFF                  = 0x4,
+    MODE_SHUNT_VOLTAGE_CONTINUOUS = 0x5,
+    MODE_BUS_VOLTAGE_CONTINUOUS   = 0x6,
+    MODE_SHUNT_AND_BUS_CONTINUOUS = 0x7,
 };
 
-static uint16_t ina219_conf = 0;
 static uint16_t ina219_cal_val = 0;
-static uint16_t ina219_curr_div = 0;
-static float ina219_power_mul = 0.0;
+static uint16_t ina219_cur_div = 1;
+static float    ina219_pwr_mul = 0.0;
 
-static void ina219_write(uint8_t reg, const uint8_t *buff)
+static ina219_conf_t ina219_conf = {0};
+
+static void ina219_reg_write(uint8_t reg, const uint8_t *buff)
 {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 
     i2c_master_start(cmd);
 
-    i2c_master_write_byte(cmd, INA219_ADDR << 1 | I2C_MASTER_WRITE, 1);
-    i2c_master_write_byte(cmd, reg, 1);
-    i2c_master_write_byte(cmd, buff[1], 1);
-    i2c_master_write_byte(cmd, buff[0], 1);
+    i2c_master_write_byte(cmd, INA219_ADDR << 1 | I2C_MASTER_WRITE, true);
+    i2c_master_write_byte(cmd, reg, true);
+    i2c_master_write_byte(cmd, buff[1], true);
+    i2c_master_write_byte(cmd, buff[0], true);
 
     i2c_master_stop(cmd);
 
@@ -98,20 +96,20 @@ static void ina219_write(uint8_t reg, const uint8_t *buff)
 }
 
 #ifdef CONFIG_ENABLE_POWER_MONITOR
-static void ina219_read(uint8_t reg, uint8_t *buff)
+static void ina219_reg_read(uint8_t reg, uint8_t *buff)
 {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 
     i2c_master_start(cmd);
 
-    i2c_master_write_byte(cmd, INA219_ADDR << 1 | I2C_MASTER_WRITE, 1);
-    i2c_master_write_byte(cmd, reg, 1);
+    i2c_master_write_byte(cmd, INA219_ADDR << 1 | I2C_MASTER_WRITE, true);
+    i2c_master_write_byte(cmd, reg, true);
 
     i2c_master_start(cmd);
 
-    i2c_master_write_byte(cmd, INA219_ADDR << 1 | I2C_MASTER_READ, 1);
-    i2c_master_read_byte(cmd, &buff[1], 0);
-    i2c_master_read_byte(cmd, &buff[0], 1);
+    i2c_master_write_byte(cmd, INA219_ADDR << 1 | I2C_MASTER_READ, true);
+    i2c_master_read_byte(cmd, &buff[1], I2C_MASTER_ACK);
+    i2c_master_read_byte(cmd, &buff[0], I2C_MASTER_NACK);
 
     i2c_master_stop(cmd);
 
@@ -120,27 +118,27 @@ static void ina219_read(uint8_t reg, uint8_t *buff)
     i2c_cmd_link_delete(cmd);
 }
 #endif
-
-static int16_t ina219_get_bus_voltage_raw(void)
-{
-    int16_t value = 0;
-
-#ifdef CONFIG_ENABLE_POWER_MONITOR
-    ina219_read(INA219_REG_BUS_VOLTAGE, (uint8_t *)&value);
-#endif
-
-    return ((value >> 3) * 4);
-}
 
 static int16_t ina219_get_shunt_voltage_raw(void)
 {
     int16_t value = 0;
 
 #ifdef CONFIG_ENABLE_POWER_MONITOR
-    ina219_read(INA219_REG_SHUNT_VOLTAGE, (uint8_t *)&value);
+    ina219_reg_read(INA219_REG_SHUNT_VOLTAGE, (uint8_t *)&value);
 #endif
 
     return value;
+}
+
+static int16_t ina219_get_bus_voltage_raw(void)
+{
+    int16_t value = 0;
+
+#ifdef CONFIG_ENABLE_POWER_MONITOR
+    ina219_reg_read(INA219_REG_BUS_VOLTAGE, (uint8_t *)&value);
+#endif
+
+    return ((value >> 3) * 4);
 }
 
 static int16_t ina219_get_current_raw(void)
@@ -148,8 +146,8 @@ static int16_t ina219_get_current_raw(void)
     int16_t value = 0;
 
 #ifdef CONFIG_ENABLE_POWER_MONITOR
-    ina219_write(INA219_REG_CALIBRATION, (const uint8_t *)&ina219_cal_val);
-    ina219_read(INA219_REG_CURRENT, (uint8_t *)&value);
+    ina219_reg_write(INA219_REG_CALIBRATION, (const uint8_t *)&ina219_cal_val);
+    ina219_reg_read(INA219_REG_CURRENT, (uint8_t *)&value);
 #endif
 
     return value;
@@ -160,8 +158,8 @@ static int16_t ina219_get_power_raw(void)
     int16_t value = 0;
 
 #ifdef CONFIG_ENABLE_POWER_MONITOR
-    ina219_write(INA219_REG_CALIBRATION, (const uint8_t *)&ina219_cal_val);
-    ina219_read(INA219_REG_POWER, (uint8_t *)&value);
+    ina219_reg_write(INA219_REG_CALIBRATION, (const uint8_t *)&ina219_cal_val);
+    ina219_reg_read(INA219_REG_POWER, (uint8_t *)&value);
 #endif
 
     return value;
@@ -169,47 +167,53 @@ static int16_t ina219_get_power_raw(void)
 
 void ina219_set_calibration_32v_2a(void)
 {
-    ina219_conf = INA219_CONFIG_BUS_VOLTAGE_RANGE_32V |
-                  INA219_CONFIG_GAIN_8_320MV |
-                  INA219_CONFIG_BUS_ADC_RES_12BIT_128S_69MS |
-                  INA219_CONFIG_SHUNT_ADC_RES_12BIT_128S_69MS |
-                  INA219_CONFIG_MODE_SHUNT_AND_BUS_VOLTAGE_CONTINUOUS;
     ina219_cal_val = 4096;      // 3.2A max
-    ina219_curr_div = 10;       // 100uA per bit
-    ina219_power_mul = 2.0;     // 1mW per bit
+    ina219_cur_div = 10;        // 100uA per bit
+    ina219_pwr_mul = 2.0;       // 1mW per bit
 
-    ina219_write(INA219_REG_CALIBRATION, (const uint8_t *)&ina219_cal_val);
-    ina219_write(INA219_REG_CONFIG, (const uint8_t *)&ina219_conf);
+    ina219_conf.rst  = 0;
+    ina219_conf.brng = BRNG_32V_FSR;
+    ina219_conf.pg   = PGA_GAIN_8_320MV;
+    ina219_conf.badc = ADC_RES_12BIT_128S;
+    ina219_conf.sadc = ADC_RES_12BIT_128S;
+    ina219_conf.mode = MODE_SHUNT_AND_BUS_CONTINUOUS;
+
+    ina219_reg_write(INA219_REG_CALIBRATION, (const uint8_t *)&ina219_cal_val);
+    ina219_reg_write(INA219_REG_CONFIG, (const uint8_t *)&ina219_conf);
 }
 
 void ina219_set_calibration_32v_1a(void)
 {
-    ina219_conf = INA219_CONFIG_BUS_VOLTAGE_RANGE_32V |
-                  INA219_CONFIG_GAIN_8_320MV |
-                  INA219_CONFIG_BUS_ADC_RES_12BIT_128S_69MS |
-                  INA219_CONFIG_SHUNT_ADC_RES_12BIT_128S_69MS |
-                  INA219_CONFIG_MODE_SHUNT_AND_BUS_VOLTAGE_CONTINUOUS;
     ina219_cal_val = 10240;     // 1.3A max
-    ina219_curr_div = 25;       // 40uA per bit
-    ina219_power_mul = 0.8;     // 800uW per bit
+    ina219_cur_div = 25;        // 40uA per bit
+    ina219_pwr_mul = 0.8;       // 800uW per bit
 
-    ina219_write(INA219_REG_CALIBRATION, (const uint8_t *)&ina219_cal_val);
-    ina219_write(INA219_REG_CONFIG, (const uint8_t *)&ina219_conf);
+    ina219_conf.rst  = 0;
+    ina219_conf.brng = BRNG_32V_FSR;
+    ina219_conf.pg   = PGA_GAIN_8_320MV;
+    ina219_conf.badc = ADC_RES_12BIT_128S;
+    ina219_conf.sadc = ADC_RES_12BIT_128S;
+    ina219_conf.mode = MODE_SHUNT_AND_BUS_CONTINUOUS;
+
+    ina219_reg_write(INA219_REG_CALIBRATION, (const uint8_t *)&ina219_cal_val);
+    ina219_reg_write(INA219_REG_CONFIG, (const uint8_t *)&ina219_conf);
 }
 
 void ina219_set_calibration_16v_400ma(void)
 {
-    ina219_conf = INA219_CONFIG_BUS_VOLTAGE_RANGE_16V |
-                  INA219_CONFIG_GAIN_1_40MV |
-                  INA219_CONFIG_BUS_ADC_RES_12BIT_128S_69MS |
-                  INA219_CONFIG_SHUNT_ADC_RES_12BIT_128S_69MS |
-                  INA219_CONFIG_MODE_SHUNT_AND_BUS_VOLTAGE_CONTINUOUS;
     ina219_cal_val = 8192;      // 400mA max
-    ina219_curr_div = 20;       // 50uA per bit
-    ina219_power_mul = 1.0;     // 1mW per bit
+    ina219_cur_div = 20;        // 50uA per bit
+    ina219_pwr_mul = 1.0;       // 1mW per bit
 
-    ina219_write(INA219_REG_CALIBRATION, (const uint8_t *)&ina219_cal_val);
-    ina219_write(INA219_REG_CONFIG, (const uint8_t *)&ina219_conf);
+    ina219_conf.rst  = 0;
+    ina219_conf.brng = BRNG_16V_FSR;
+    ina219_conf.pg   = PGA_GAIN_1_40MV;
+    ina219_conf.badc = ADC_RES_12BIT_128S;
+    ina219_conf.sadc = ADC_RES_12BIT_128S;
+    ina219_conf.mode = MODE_SHUNT_AND_BUS_CONTINUOUS;
+
+    ina219_reg_write(INA219_REG_CALIBRATION, (const uint8_t *)&ina219_cal_val);
+    ina219_reg_write(INA219_REG_CONFIG, (const uint8_t *)&ina219_conf);
 }
 
 float ina219_get_shunt_voltage_mv(void)
@@ -224,18 +228,17 @@ float ina219_get_bus_voltage_v(void)
 
 float ina219_get_current_ma(void)
 {
-    return (ina219_get_current_raw() / ina219_curr_div);
+    return (ina219_get_current_raw() / ina219_cur_div);
 }
 
 float ina219_get_power_mw(void)
 {
-    return (ina219_get_power_raw() * ina219_power_mul);
+    return (ina219_get_power_raw() * ina219_pwr_mul);
 }
 
 void ina219_init(void)
 {
-    ina219_conf = INA219_CONFIG_RESET_BIT;
-    ina219_write(INA219_REG_CONFIG, (const uint8_t *)&ina219_conf);
+    memset(&ina219_conf, 0x00, sizeof(ina219_conf_t));
 
     ina219_set_calibration_32v_2a();
 
