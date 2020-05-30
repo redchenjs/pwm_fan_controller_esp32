@@ -38,13 +38,13 @@ static void gui_task(void *pvParameter)
     ESP_LOGI(TAG, "started.");
 
     snprintf(text_buff, sizeof(text_buff), "PWM:");
-    gdispGFillStringBox(gui_gdisp, 5, 2, 90, 32, text_buff, gui_font, Yellow, Black, justifyLeft);
+    gdispGFillStringBox(gui_gdisp, 2, 2, 93, 32, text_buff, gui_font, Yellow, Black, justifyLeft);
 
     snprintf(text_buff, sizeof(text_buff), "RPM:");
-    gdispGFillStringBox(gui_gdisp, 5, 34, 90, 32, text_buff, gui_font, Cyan, Black, justifyLeft);
+    gdispGFillStringBox(gui_gdisp, 2, 34, 93, 32, text_buff, gui_font, Cyan, Black, justifyLeft);
 
     snprintf(text_buff, sizeof(text_buff), "PWR:");
-    gdispGFillStringBox(gui_gdisp, 5, 67, 90, 32, text_buff, gui_font, Magenta, Black, justifyLeft);
+    gdispGFillStringBox(gui_gdisp, 2, 67, 93, 32, text_buff, gui_font, Magenta, Black, justifyLeft);
 
     while (1) {
         if (gui_mode) {
@@ -53,19 +53,19 @@ static void gui_task(void *pvParameter)
             gdispGSetBacklight(gui_gdisp, 255);
 
             snprintf(text_buff, sizeof(text_buff), "%u", fan_get_duty());
-            gdispGFillStringBox(gui_gdisp, 95, 2, 140, 32, text_buff, gui_font, Yellow, Black, justifyRight);
+            gdispGFillStringBox(gui_gdisp, 95, 2, 143, 32, text_buff, gui_font, Yellow, Black, justifyRight);
 
             snprintf(text_buff, sizeof(text_buff), "%u", fan_get_rpm());
-            gdispGFillStringBox(gui_gdisp, 95, 34, 140, 32, text_buff, gui_font, Cyan, Black, justifyRight);
+            gdispGFillStringBox(gui_gdisp, 95, 34, 143, 32, text_buff, gui_font, Cyan, Black, justifyRight);
 
             snprintf(text_buff, sizeof(text_buff), "%s", pwr_get_mode_str());
-            gdispGFillStringBox(gui_gdisp, 95, 67, 140, 32, text_buff, gui_font, Magenta, Black, justifyRight);
+            gdispGFillStringBox(gui_gdisp, 95, 67, 143, 32, text_buff, gui_font, Magenta, Black, justifyRight);
 
             snprintf(text_buff, sizeof(text_buff), "%5.2fV", ina219_get_bus_voltage_v());
-            gdispGFillStringBox(gui_gdisp, 5, 100, 115, 32, text_buff, gui_font, Lime, Black, justifyRight);
+            gdispGFillStringBox(gui_gdisp, 2, 100, 118, 32, text_buff, gui_font, Lime, Black, justifyRight);
 
-            snprintf(text_buff, sizeof(text_buff), "%4.2fA", ina219_get_current_ma() / 1000.0);
-            gdispGFillStringBox(gui_gdisp, 120, 100, 115, 32, text_buff, gui_font, Orange, Black, justifyRight);
+            snprintf(text_buff, sizeof(text_buff), "%5.3fA", ina219_get_current_ma() / 1000.0);
+            gdispGFillStringBox(gui_gdisp, 120, 100, 118, 32, text_buff, gui_font, Orange, Black, justifyRight);
 
             gdispGFlush(gui_gdisp);
 
