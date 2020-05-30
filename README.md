@@ -5,8 +5,17 @@ PWM Fan Controller based on ESP32 chip.
 
 ## Main Features
 
+* EC11 Encoder Input
+* INA219 Power Monitor
+* ST7789 135x240 LCD Panel
+* Quick Charge 2.0 Support
+* Fan RPM Calculation
 * BLE Control Interface
 * OTA Firmware Update (via SPP Profile)
+
+## UI
+
+<img src="docs/ui.png">
 
 ## Preparing
 
