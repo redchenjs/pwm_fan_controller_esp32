@@ -18,19 +18,17 @@ const char *bt_dev_address = NULL;
 
 void bt_init(void)
 {
-#ifndef CONFIG_ENABLE_BLE_CONTROL_IF
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
-#endif
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
-    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BTDM));
+    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
     ESP_ERROR_CHECK(esp_bluedroid_init());
     ESP_ERROR_CHECK(esp_bluedroid_enable());
 
     bt_dev_address = (const char *)esp_bt_dev_get_address();
 
-    ESP_LOGI(TAG, "initialized, bt: 1, ble: %d",
+    ESP_LOGI(TAG, "initialized, bt: 0, ble: %d",
 #ifdef CONFIG_ENABLE_BLE_CONTROL_IF
              1
 #else

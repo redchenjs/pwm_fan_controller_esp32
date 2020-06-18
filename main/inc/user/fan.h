@@ -13,6 +13,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
+#define DEFAULT_FAN_DUTY 0x00
+
 extern xQueueHandle fan_evt_queue;
 
 extern void fan_set_duty(uint16_t val);

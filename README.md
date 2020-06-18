@@ -10,8 +10,7 @@ PWM Fan Controller based on ESP32 chip.
 * ST7789 135x240 LCD Panel
 * Quick Charge 2.0 Support
 * Fan RPM Calculation
-* BLE Control Interface
-* OTA Firmware Update (via SPP Profile)
+* BLE Control Interface (OTA Firmware Update / Fan Remote Control)
 
 ## UI
 

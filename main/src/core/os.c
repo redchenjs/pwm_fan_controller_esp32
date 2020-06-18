@@ -16,7 +16,7 @@
 
 EventGroupHandle_t user_event_group;
 
-#ifdef CONFIG_ENABLE_OTA_OVER_SPP
+#ifdef CONFIG_ENABLE_BLE_CONTROL_IF
 static EventBits_t restart_wait_bits = 0;
 
 static void os_power_task_handle(void *pvParameters)
@@ -69,7 +69,7 @@ void os_init(void)
 {
     user_event_group = xEventGroupCreate();
 
-#ifdef CONFIG_ENABLE_OTA_OVER_SPP
+#ifdef CONFIG_ENABLE_BLE_CONTROL_IF
     xTaskCreatePinnedToCore(os_power_task_handle, "osPowerT", 2048, NULL, 5, NULL, 0);
 #endif
 }

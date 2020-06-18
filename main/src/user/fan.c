@@ -27,7 +27,7 @@ xQueueHandle fan_evt_queue = NULL;
 
 static bool fan_mode = true;
 static uint16_t fan_rpm = 0;
-static uint16_t fan_duty = 0;
+static uint16_t fan_duty = DEFAULT_FAN_DUTY;
 
 static uint8_t env_cnt = 0;
 static bool env_saved = true;

@@ -18,8 +18,8 @@
 #include "user/pwr.h"
 #include "user/fan.h"
 #include "user/gui.h"
+#include "user/led.h"
 #include "user/key.h"
-#include "user/bt_app.h"
 #include "user/ble_app.h"
 
 static void core_init(void)
@@ -63,16 +63,16 @@ static void user_init(void)
     gui_init();
 #endif
 
+#ifdef CONFIG_ENABLE_LED
+    led_init();
+#endif
+
 #ifdef CONFIG_ENABLE_ENCODER
     key_init();
 #endif
 
 #ifdef CONFIG_ENABLE_BLE_CONTROL_IF
     ble_app_init();
-#endif
-
-#ifdef CONFIG_ENABLE_OTA_OVER_SPP
-    bt_app_init();
 #endif
 }
 
