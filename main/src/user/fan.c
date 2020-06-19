@@ -33,6 +33,8 @@ static uint8_t env_cnt = 0;
 static bool env_saved = true;
 
 static double time_val = 0.0;
+static double time_sum = 0.0;
+
 static bool first_edge = true;
 static bool period_done = true;
 
@@ -135,7 +137,6 @@ static void pwm_init(void)
 static void fan_task(void *pvParameter)
 {
     uint8_t rpm_cnt = 0;
-    double rpm_sum = 0.0;
     uint32_t fan_evt = 0;
 
     tim_init();
@@ -181,23 +182,23 @@ static void fan_task(void *pvParameter)
                     if (rpm_cnt++ == 4) {
                         rpm_cnt = 0;
 
-                        fan_rpm = rpm_sum / 4.0;
+                        fan_rpm = 60.0 / time_sum;
 
-                        rpm_sum = 0.0;
+                        time_sum = 0.0;
                     } else {
-                        rpm_sum += 15.0 / time_val;
+                        time_sum += time_val;
                     }
                     break;
                 default:
                     break;
             }
         } else {
+            rpm_cnt = 0;
+            fan_rpm = 0;
+            time_sum = 0.0;
+
             first_edge = true;
             period_done = true;
-
-            fan_rpm = 0;
-            rpm_cnt = 0;
-            rpm_sum = 0.0;
         }
 
         if (!env_saved && env_cnt++ == 50) {
