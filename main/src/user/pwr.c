@@ -18,6 +18,7 @@
 
 #define TAG "pwr"
 
+static bool qc_mode = false;
 static pwr_idx_t pwr_mode = PWR_IDX_DC;
 
 static char pwr_mode_str[][8] = {
@@ -31,6 +32,10 @@ static char pwr_mode_str[][8] = {
 
 void pwr_set_mode(pwr_idx_t idx)
 {
+    if (!qc_mode) {
+        return;
+    }
+
     switch (idx) {
         default:
         case PWR_IDX_QC_5V:
@@ -113,6 +118,8 @@ void pwr_init(void)
 
         return;
     }
+
+    qc_mode = true;
 
     size_t length = sizeof(pwr_mode);
     app_getenv("PWR_INIT_CFG", &pwr_mode, &length);
