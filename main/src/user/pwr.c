@@ -32,6 +32,8 @@ static char pwr_mode_str[][8] = {
 
 void pwr_set_mode(pwr_idx_t idx)
 {
+    pwr_idx_t pre_mode = pwr_mode;
+
     if (!qc_mode) {
         return;
     }
@@ -64,7 +66,7 @@ void pwr_set_mode(pwr_idx_t idx)
             break;
     }
 
-    if (pwr_mode >= PWR_IDX_QC_5V) {
+    if (pre_mode != pwr_mode) {
         app_setenv("PWR_INIT_CFG", &pwr_mode, sizeof(pwr_mode));
 
         ESP_LOGI(TAG, "%s", pwr_get_mode_str());
@@ -121,8 +123,9 @@ void pwr_init(void)
 
     qc_mode = true;
 
-    size_t length = sizeof(pwr_mode);
-    app_getenv("PWR_INIT_CFG", &pwr_mode, &length);
+    pwr_idx_t pwr_init_cfg = PWR_IDX_DC;
+    size_t length = sizeof(pwr_init_cfg);
+    app_getenv("PWR_INIT_CFG", &pwr_init_cfg, &length);
 
-    pwr_set_mode(pwr_mode);
+    pwr_set_mode(pwr_init_cfg);
 }
