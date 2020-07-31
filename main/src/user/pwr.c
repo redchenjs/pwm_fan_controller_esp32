@@ -19,6 +19,7 @@
 #define TAG "pwr"
 
 static bool qc_mode = false;
+static pwr_idx_t env_mode = PWR_IDX_DC;
 static pwr_idx_t pwr_mode = PWR_IDX_DC;
 
 static char pwr_mode_str[][8] = {
@@ -32,8 +33,6 @@ static char pwr_mode_str[][8] = {
 
 void pwr_set_mode(pwr_idx_t idx)
 {
-    pwr_idx_t pre_mode = pwr_mode;
-
     if (!qc_mode) {
         return;
     }
@@ -66,8 +65,10 @@ void pwr_set_mode(pwr_idx_t idx)
             break;
     }
 
-    if (pre_mode != pwr_mode) {
-        app_setenv("PWR_INIT_CFG", &pwr_mode, sizeof(pwr_mode));
+    if (env_mode != pwr_mode) {
+        env_mode = pwr_mode;
+
+        app_setenv("PWR_INIT_CFG", &env_mode, sizeof(env_mode));
 
         ESP_LOGI(TAG, "%s", pwr_get_mode_str());
     }
@@ -123,9 +124,8 @@ void pwr_init(void)
 
     qc_mode = true;
 
-    pwr_idx_t pwr_init_cfg = PWR_IDX_DC;
-    size_t length = sizeof(pwr_init_cfg);
-    app_getenv("PWR_INIT_CFG", &pwr_init_cfg, &length);
+    size_t length = sizeof(env_mode);
+    app_getenv("PWR_INIT_CFG", &env_mode, &length);
 
-    pwr_set_mode(pwr_init_cfg);
+    pwr_set_mode(env_mode);
 }
