@@ -17,9 +17,9 @@
 
 #include "core/os.h"
 #include "core/app.h"
-#include "user/pwr.h"
+
+#include "user/ec.h"
 #include "user/fan.h"
-#include "user/key.h"
 
 #define TAG "fan"
 
@@ -156,7 +156,7 @@ static void fan_task(void *pvParameter)
 
         if (xQueueReceive(fan_evt_queue, &fan_evt, 500 / portTICK_RATE_MS)) {
             switch (fan_evt) {
-#ifdef CONFIG_ENABLE_ENCODER
+#ifdef CONFIG_ENABLE_EC
                 case EC_EVT_I: {
                     int16_t duty_tmp = fan_duty + 1;
                     fan_set_duty((duty_tmp < 255) ? duty_tmp : 255);
@@ -239,10 +239,6 @@ void fan_set_mode(bool val)
     if (fan_mode) {
         xEventGroupSetBits(user_event_group, FAN_RUN_BIT);
 
-#ifdef CONFIG_ENABLE_QC
-        pwr_init(PWR_IDX_QC_12V);
-#endif
-
         gpio_intr_enable(CONFIG_FAN_IN_PIN);
 
         timer_start(TIMER_GROUP_0, TIMER_0);
@@ -251,10 +247,6 @@ void fan_set_mode(bool val)
         ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_duty, 0);
     } else {
         xEventGroupClearBits(user_event_group, FAN_RUN_BIT);
-
-#ifdef CONFIG_ENABLE_QC
-        pwr_init(PWR_IDX_QC_5V);
-#endif
 
         gpio_intr_disable(CONFIG_FAN_IN_PIN);
 

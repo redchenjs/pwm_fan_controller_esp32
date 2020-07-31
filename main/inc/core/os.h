@@ -12,18 +12,21 @@
 #include "freertos/event_groups.h"
 
 typedef enum user_event_group_bits {
-    OS_PWR_RESTART_BIT = BIT0,
+    OS_PWR_SLP_BIT     = BIT0,
+    OS_PWR_RST_BIT     = BIT1,
 
-    BLE_GATTS_IDLE_BIT = BIT1,
-    BLE_GATTS_LOCK_BIT = BIT2,
+    BLE_GATTS_IDLE_BIT = BIT2,
+    BLE_GATTS_LOCK_BIT = BIT3,
 
-    FAN_RUN_BIT        = BIT3,
-    GUI_RELOAD_BIT     = BIT4,
+    FAN_RUN_BIT        = BIT4,
+    KEY_RUN_BIT        = BIT5,
+    GUI_RELOAD_BIT     = BIT6,
 } user_event_group_bits_t;
 
 extern EventGroupHandle_t user_event_group;
 
-extern void os_power_restart_wait(EventBits_t bits);
+extern void os_pwr_slp_wait(EventBits_t bits);
+extern void os_pwr_rst_wait(EventBits_t bits);
 
 extern void os_init(void);
 

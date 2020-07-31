@@ -20,9 +20,11 @@ typedef enum {
     PWR_IDX_MAX
 } pwr_idx_t;
 
+extern void pwr_set_mode(pwr_idx_t idx);
+
 extern pwr_idx_t pwr_get_mode(void);
 extern char *pwr_get_mode_str(void);
 
-extern void pwr_init(pwr_idx_t idx);
+extern void pwr_init(void);
 
 #endif /* INC_USER_PWR_H_ */

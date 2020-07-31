@@ -253,7 +253,7 @@ void ota_exec(const char *data, uint32_t len)
                 esp_ble_gatts_close(gatts_profile_tbl[PROFILE_IDX_OTA].gatts_if,
                                     gatts_profile_tbl[PROFILE_IDX_OTA].conn_id);
 
-                os_power_restart_wait(BLE_GATTS_IDLE_BIT);
+                os_pwr_rst_wait(BLE_GATTS_IDLE_BIT);
 
                 update_handle = 0;
 

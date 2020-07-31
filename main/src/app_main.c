@@ -15,11 +15,12 @@
 
 #include "board/ina219.h"
 
+#include "user/ec.h"
+#include "user/key.h"
 #include "user/pwr.h"
 #include "user/fan.h"
 #include "user/gui.h"
 #include "user/led.h"
-#include "user/key.h"
 #include "user/ble_app.h"
 
 static void core_init(void)
@@ -53,8 +54,16 @@ static void board_init(void)
 
 static void user_init(void)
 {
+#ifdef CONFIG_ENABLE_EC
+    ec_init();
+#endif
+
+#if defined(CONFIG_ENABLE_PWR_KEY) || defined(CONFIG_ENABLE_SLP_KEY)
+    key_init();
+#endif
+
 #ifdef CONFIG_ENABLE_QC
-    pwr_init(PWR_IDX_QC_12V);
+    pwr_init();
 #endif
 
     fan_init();
@@ -67,11 +76,7 @@ static void user_init(void)
     led_init();
 #endif
 
-#ifdef CONFIG_ENABLE_ENCODER
-    key_init();
-#endif
-
-#ifdef CONFIG_ENABLE_BLE_CONTROL_IF
+#ifdef CONFIG_ENABLE_BLE_IF
     ble_app_init();
 #endif
 }

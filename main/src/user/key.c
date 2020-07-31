@@ -1,151 +1,124 @@
 /*
  * key.c
  *
- *  Created on: 2020-05-25 13:32
+ *  Created on: 2018-05-31 14:07
  *      Author: Jack Chen <redchenjs@live.com>
  */
 
 #include "esp_log.h"
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
 #include "freertos/task.h"
-
 #include "driver/gpio.h"
 
 #include "core/os.h"
-#include "user/fan.h"
-#include "user/key.h"
+#include "user/key_handle.h"
 
 #define TAG "key"
 
-#ifdef CONFIG_ENABLE_ENCODER
-static void pin_init(void)
-{
-    gpio_config_t io_conf = {
-        .pin_bit_mask = BIT64(CONFIG_EC_PHASE_A_PIN) |
-                        BIT64(CONFIG_EC_PHASE_B_PIN) |
-                        BIT64(CONFIG_EC_BUTTON_PIN),
-        .mode = GPIO_MODE_INPUT,
-        .pull_up_en = true,
-        .pull_down_en = false,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
-    gpio_config(&io_conf);
-}
+#if defined(CONFIG_ENABLE_PWR_KEY) || defined(CONFIG_ENABLE_SLP_KEY)
+static const uint8_t gpio_pin[] = {
+#ifdef CONFIG_ENABLE_PWR_KEY
+    CONFIG_PWR_KEY_PIN,
+#endif
+#ifdef CONFIG_ENABLE_SLP_KEY
+    CONFIG_SLP_KEY_PIN,
+#endif
+};
+
+static const uint8_t gpio_val[] = {
+#ifdef CONFIG_ENABLE_PWR_KEY
+    #ifdef CONFIG_PWR_KEY_ACTIVE_LOW
+        0,
+    #else
+        1,
+    #endif
+#endif
+#ifdef CONFIG_ENABLE_SLP_KEY
+    #ifdef CONFIG_SLP_KEY_ACTIVE_LOW
+        0,
+    #else
+        1,
+    #endif
+#endif
+};
+
+static const uint16_t gpio_hold[] = {
+#ifdef CONFIG_ENABLE_PWR_KEY
+    CONFIG_PWR_KEY_HOLD_TIME,
+#endif
+#ifdef CONFIG_ENABLE_SLP_KEY
+    CONFIG_SLP_KEY_HOLD_TIME,
+#endif
+};
+
+static void (*key_handle[])(void) = {
+#ifdef CONFIG_ENABLE_PWR_KEY
+    pwr_key_handle,
+#endif
+#ifdef CONFIG_ENABLE_SLP_KEY
+    slp_key_handle,
+#endif
+};
 
 static void key_task(void *pvParameter)
 {
     portTickType xLastWakeTime;
-    bool phase_a_p = false;
-    bool phase_a_n = false;
-    bool phase_b_p = false;
-    bool phase_b_n = false;
-    bool button_p  = false;
-    bool button_n  = false;
-    uint32_t fan_evt = 0;
+    gpio_config_t io_conf = {0};
+    uint16_t count[sizeof(gpio_pin)] = {0};
 
-    pin_init();
+    for (int i=0; i<sizeof(gpio_pin); i++) {
+        io_conf.pin_bit_mask = BIT64(gpio_pin[i]);
+        io_conf.mode = GPIO_MODE_INPUT;
+
+        if (gpio_val[i] == 0) {
+            io_conf.pull_up_en = true;
+            io_conf.pull_down_en = false;
+        } else {
+            io_conf.pull_up_en = false;
+            io_conf.pull_down_en = true;
+        }
+
+        io_conf.intr_type = GPIO_INTR_DISABLE;
+
+        gpio_config(&io_conf);
+    }
 
     ESP_LOGI(TAG, "started.");
-
-    phase_a_n = gpio_get_level(CONFIG_EC_PHASE_A_PIN);
-    phase_b_n = gpio_get_level(CONFIG_EC_PHASE_B_PIN);
-    button_n  = gpio_get_level(CONFIG_EC_BUTTON_PIN);
 
     while (1) {
         xEventGroupWaitBits(
             user_event_group,
-            FAN_RUN_BIT,
+            KEY_RUN_BIT | FAN_RUN_BIT,
             pdFALSE,
-            pdFALSE,
+            pdTRUE,
             portMAX_DELAY
         );
 
         xLastWakeTime = xTaskGetTickCount();
 
-        fan_evt = EC_EVT_N;
+        for (int i=0; i<sizeof(gpio_pin); i++) {
+            if (gpio_get_level(gpio_pin[i]) == gpio_val[i]) {
+                if (++count[i] == gpio_hold[i] / 10) {
+                    count[i] = 0;
 
-        phase_a_p = phase_a_n;
-        phase_b_p = phase_b_n;
-        button_p  = button_n;
+                    xEventGroupClearBits(user_event_group, KEY_RUN_BIT);
 
-        phase_a_n = gpio_get_level(CONFIG_EC_PHASE_A_PIN);
-        phase_b_n = gpio_get_level(CONFIG_EC_PHASE_B_PIN);
-        button_n  = gpio_get_level(CONFIG_EC_BUTTON_PIN);
-
-        if (phase_a_p != phase_a_n) {
-#ifdef CONFIG_EC_TYPE_1P1D
-            (void)phase_b_p;
-
-            if (!phase_a_n) {
-                if (phase_b_n) {
-                    fan_evt = EC_EVT_I;
-                } else {
-                    fan_evt = EC_EVT_D;
-                }
-            }
-#else
-            if (phase_a_n) {
-                if (phase_b_p & !phase_b_n) {
-                    fan_evt = EC_EVT_I;
-                }
-                if (!phase_b_p & phase_b_n) {
-                    fan_evt = EC_EVT_D;
-                }
-                if ((phase_b_p == phase_b_n) & !phase_b_n) {
-                    fan_evt = EC_EVT_I;
-                }
-                if ((phase_b_p == phase_b_n) & phase_b_n) {
-                    fan_evt = EC_EVT_D;
+                    key_handle[i]();
                 }
             } else {
-                if (phase_b_p & !phase_b_n) {
-                    fan_evt = EC_EVT_D;
-                }
-                if (!phase_b_p & phase_b_n) {
-                    fan_evt = EC_EVT_I;
-                }
-                if ((phase_b_p == phase_b_n) & !phase_b_n) {
-                    fan_evt = EC_EVT_D;
-                }
-                if ((phase_b_p == phase_b_n) & phase_b_n) {
-                    fan_evt = EC_EVT_I;
-                }
+                count[i] = 0;
             }
-#endif
         }
 
-        switch (fan_evt) {
-            case EC_EVT_N:
-                if (button_p & !button_n) {
-                    fan_evt = EC_EVT_N_B;
-                }
-                break;
-            case EC_EVT_I:
-                if (!button_n) {
-                    fan_evt = EC_EVT_I_B;
-                }
-                break;
-            case EC_EVT_D:
-                if (!button_n) {
-                    fan_evt = EC_EVT_D_B;
-                }
-                break;
-            default:
-                break;
-        }
-
-        if (fan_evt != EC_EVT_N) {
-            xQueueSend(fan_evt_queue, &fan_evt, portMAX_DELAY);
-        }
-
-        vTaskDelayUntil(&xLastWakeTime, 1 / portTICK_RATE_MS);
+        vTaskDelayUntil(&xLastWakeTime, 10 / portTICK_RATE_MS);
     }
 }
 
 void key_init(void)
 {
+    xEventGroupSetBits(user_event_group, KEY_RUN_BIT);
+
     xTaskCreatePinnedToCore(key_task, "keyT", 1920, NULL, 8, NULL, 1);
 }
 #endif
