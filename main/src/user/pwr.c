@@ -105,7 +105,7 @@ void pwr_init(void)
 
         dac_output_disable(DAC_CHANNEL_1);
 
-        return;
+        goto pwr_exit;
     }
 
     do {
@@ -119,7 +119,7 @@ void pwr_init(void)
     if (dp_raw > 255) {
         pwr_mode = PWR_IDX_DCP;
 
-        return;
+        goto pwr_exit;
     }
 
     qc_mode = true;
@@ -128,4 +128,7 @@ void pwr_init(void)
     app_getenv("PWR_INIT_CFG", &env_mode, &length);
 
     pwr_set_mode(env_mode);
+
+pwr_exit:
+    ESP_LOGI(TAG, "started.");
 }
