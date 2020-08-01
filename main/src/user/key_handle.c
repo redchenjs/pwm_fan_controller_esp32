@@ -47,8 +47,10 @@ void slp_key_handle(void)
 #endif
     fan_set_mode(0);
 
+#ifdef CONFIG_ENABLE_QC
     dac_output_disable(DAC_CHANNEL_1);
     dac_output_disable(DAC_CHANNEL_2);
+#endif
 
 #ifdef CONFIG_ENABLE_BLE_IF
     EventBits_t uxBits = xEventGroupGetBits(user_event_group);
@@ -58,6 +60,6 @@ void slp_key_handle(void)
     }
 #endif
 
-    os_pwr_slp_wait(BLE_GATTS_IDLE_BIT);
+    os_pwr_sleep_wait(BLE_GATTS_IDLE_BIT);
 }
 #endif

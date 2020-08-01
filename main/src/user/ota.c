@@ -15,8 +15,11 @@
 #include "freertos/ringbuf.h"
 #include "freertos/task.h"
 
+#include "driver/dac.h"
+
 #include "core/os.h"
 #include "core/app.h"
+
 #include "user/fan.h"
 #include "user/gui.h"
 #include "user/led.h"
@@ -250,10 +253,15 @@ void ota_exec(const char *data, uint32_t len)
                     fan_set_mode(0);
                 }
 
+#ifdef CONFIG_ENABLE_QC
+                dac_output_disable(DAC_CHANNEL_1);
+                dac_output_disable(DAC_CHANNEL_2);
+#endif
+
                 esp_ble_gatts_close(gatts_profile_tbl[PROFILE_IDX_OTA].gatts_if,
                                     gatts_profile_tbl[PROFILE_IDX_OTA].conn_id);
 
-                os_pwr_rst_wait(BLE_GATTS_IDLE_BIT);
+                os_pwr_reset_wait(BLE_GATTS_IDLE_BIT);
 
                 update_handle = 0;
 
