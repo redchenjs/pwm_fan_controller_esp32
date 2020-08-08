@@ -143,6 +143,8 @@ static void fan_task(void *pvParameter)
     pin_init();
     pwm_init();
 
+    xEventGroupSetBits(user_event_group, FAN_RUN_BIT);
+
     ESP_LOGI(TAG, "started.");
 
     while (1) {
@@ -271,8 +273,6 @@ bool fan_env_saved(void)
 
 void fan_init(void)
 {
-    xEventGroupSetBits(user_event_group, FAN_RUN_BIT);
-
     size_t length = sizeof(fan_duty);
     app_getenv("FAN_INIT_CFG", &fan_duty, &length);
 
