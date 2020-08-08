@@ -33,6 +33,9 @@
 #define GATTS_CHAR_UUID_FAN     0x5301
 #define GATTS_NUM_HANDLE_FAN    4
 
+static uint16_t desc_val_ota = 0x0000;
+static uint16_t desc_val_fan = 0x0000;
+
 static const char *s_gatts_conn_state_str[] = {"disconnected", "connected"};
 
 static void profile_ota_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
@@ -68,19 +71,29 @@ static void profile_ota_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
 
         memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
         rsp.attr_value.handle = param->read.handle;
-        rsp.attr_value.len = strlen(app_get_version()) < (ESP_GATT_DEF_BLE_MTU_SIZE - 3) ?
-                             strlen(app_get_version()) : (ESP_GATT_DEF_BLE_MTU_SIZE - 3);
-        memcpy(rsp.attr_value.value, app_get_version(), rsp.attr_value.len);
+
+        if (param->read.handle == gatts_profile_tbl[PROFILE_IDX_OTA].descr_handle) {
+            rsp.attr_value.len = 2;
+            memcpy(rsp.attr_value.value, &desc_val_ota, sizeof(desc_val_ota));
+        } else {
+            rsp.attr_value.len = strlen(app_get_version()) < (ESP_GATT_DEF_BLE_MTU_SIZE - 3) ?
+                                 strlen(app_get_version()) : (ESP_GATT_DEF_BLE_MTU_SIZE - 3);
+            memcpy(rsp.attr_value.value, app_get_version(), rsp.attr_value.len);
+        }
 
         esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &rsp);
         break;
     }
     case ESP_GATTS_WRITE_EVT: {
-        if (!param->write.need_rsp) {
-            if (!param->write.is_prep) {
+        if (!param->write.is_prep) {
+            if (param->write.handle == gatts_profile_tbl[PROFILE_IDX_OTA].descr_handle) {
+                desc_val_ota = param->write.value[1] << 8 | param->write.value[0];
+            } else {
                 ota_exec((const char *)param->write.value, param->write.len);
             }
-        } else {
+        }
+
+        if (param->write.need_rsp) {
             esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
         }
         break;
@@ -189,40 +202,51 @@ static void profile_fan_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
 
         memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
         rsp.attr_value.handle = param->read.handle;
-        rsp.attr_value.len = 8;
 
-        rsp.attr_value.value[0] = 0x02;
-        rsp.attr_value.value[1] = 0x00;
-        rsp.attr_value.value[2] = 0x00;
-        rsp.attr_value.value[3] = 0x00;
-        rsp.attr_value.value[4] = 0x00;
-        rsp.attr_value.value[5] = 0x00;
-        rsp.attr_value.value[6] = fan_get_duty();
-        rsp.attr_value.value[7] = 0x00;
+        if (param->read.handle == gatts_profile_tbl[PROFILE_IDX_FAN].descr_handle) {
+            rsp.attr_value.len = 2;
+            memcpy(rsp.attr_value.value, &desc_val_fan, sizeof(desc_val_fan));
+        } else {
+            rsp.attr_value.len = 8;
+            rsp.attr_value.value[0] = 0x02;
+            rsp.attr_value.value[1] = 0x00;
+            rsp.attr_value.value[2] = 0x00;
+            rsp.attr_value.value[3] = 0x00;
+            rsp.attr_value.value[4] = 0x00;
+            rsp.attr_value.value[5] = 0x00;
+            rsp.attr_value.value[6] = fan_get_duty();
+            rsp.attr_value.value[7] = 0x00;
+        }
 
         esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &rsp);
         break;
     }
     case ESP_GATTS_WRITE_EVT: {
         if (!param->write.is_prep) {
-            switch (param->write.value[0]) {
-            case 0xEF: {
-                if (param->write.len == 1) {            // Restore Default Configuration
-                    fan_set_duty(DEFAULT_FAN_DUTY);
-                } else if (param->write.len == 8) {     // Update with New Configuration
-                    fan_set_duty(param->write.value[6]);
-                } else {
-                    ESP_LOGE(GATTS_FAN_TAG, "command 0x%02X error", param->write.value[0]);
+            if (param->write.handle == gatts_profile_tbl[PROFILE_IDX_FAN].descr_handle) {
+                desc_val_fan = param->write.value[1] << 8 | param->write.value[0];
+            } else {
+                switch (param->write.value[0]) {
+                case 0xEF: {
+                    if (param->write.len == 1) {            // Restore Default Configuration
+                        fan_set_duty(DEFAULT_FAN_DUTY);
+                    } else if (param->write.len == 8) {     // Update with New Configuration
+                        fan_set_duty(param->write.value[6]);
+                    } else {
+                        ESP_LOGE(GATTS_FAN_TAG, "command 0x%02X error", param->write.value[0]);
+                    }
+                    break;
                 }
-                break;
-            }
-            default:
-                ESP_LOGW(GATTS_FAN_TAG, "unknown command: 0x%02X", param->write.value[0]);
-                break;
+                default:
+                    ESP_LOGW(GATTS_FAN_TAG, "unknown command: 0x%02X", param->write.value[0]);
+                    break;
+                }
             }
         }
 
-        esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
+        if (param->write.need_rsp) {
+            esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
+        }
         break;
     }
     case ESP_GATTS_EXEC_WRITE_EVT:
