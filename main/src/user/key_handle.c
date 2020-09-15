@@ -30,7 +30,7 @@ void pwr_key_handle(void)
 {
     pwr_set_mode((pwr_get_mode() + 1) % PWR_IDX_MAX);
 
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(200 / portTICK_RATE_MS);
 
     xEventGroupSetBits(user_event_group, KEY_RUN_BIT);
 }

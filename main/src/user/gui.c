@@ -68,7 +68,7 @@ static void gui_task(void *pvParameter)
             snprintf(text_buff, sizeof(text_buff), "%u", fan_get_rpm());
             gdispGFillStringBox(gui_gdisp, 95, 34, 143, 32, text_buff, gui_font, Cyan, Black, justifyRight);
 
-            snprintf(text_buff, sizeof(text_buff), "%s", pwr_get_mode_str());
+            snprintf(text_buff, sizeof(text_buff), "%s%s", pwr_get_mode_str(), pwr_env_saved() ? "" : "*");
             gdispGFillStringBox(gui_gdisp, 95, 67, 143, 32, text_buff, gui_font, Magenta, Black, justifyRight);
 
             float voltage = ina219_get_bus_voltage_mv() * 0.001;

@@ -20,6 +20,7 @@
 
 #include "user/ec.h"
 #include "user/fan.h"
+#include "user/pwr.h"
 
 #define TAG "fan"
 
@@ -203,12 +204,8 @@ static void fan_task(void *pvParameter)
             period_done = true;
         }
 
-        if (!env_saved && env_cnt++ == 50) {
-            env_cnt = 0;
-
-            env_saved = true;
-            app_setenv("FAN_INIT_CFG", &fan_duty, sizeof(fan_duty));
-        }
+        fan_env_save();
+        pwr_env_save();
     }
 }
 
@@ -264,6 +261,16 @@ void fan_set_mode(bool val)
 bool fan_get_mode(void)
 {
     return fan_mode;
+}
+
+void fan_env_save(void)
+{
+    if (!env_saved && env_cnt++ == 50) {
+        env_cnt = 0;
+
+        env_saved = true;
+        app_setenv("FAN_INIT_CFG", &fan_duty, sizeof(fan_duty));
+    }
 }
 
 bool fan_env_saved(void)

@@ -19,8 +19,11 @@
 #define TAG "pwr"
 
 static bool qc_mode = false;
-static pwr_idx_t env_mode = PWR_IDX_DC;
 static pwr_idx_t pwr_mode = PWR_IDX_DC;
+static pwr_idx_t env_mode = PWR_IDX_DC;
+
+static uint8_t env_cnt = 0;
+static bool env_saved = true;
 
 static char pwr_mode_str[][8] = {
     "DC IN",
@@ -68,10 +71,11 @@ void pwr_set_mode(pwr_idx_t idx)
     if (env_mode != pwr_mode) {
         env_mode = pwr_mode;
 
-        app_setenv("PWR_INIT_CFG", &env_mode, sizeof(env_mode));
-
+        env_saved = false;
         ESP_LOGI(TAG, "%s", pwr_get_mode_str());
     }
+
+    env_cnt = 0;
 }
 
 pwr_idx_t pwr_get_mode(void)
@@ -82,6 +86,21 @@ pwr_idx_t pwr_get_mode(void)
 char *pwr_get_mode_str(void)
 {
     return pwr_mode_str[pwr_mode];
+}
+
+void pwr_env_save(void)
+{
+    if (!env_saved && env_cnt++ == 50) {
+        env_cnt = 0;
+
+        env_saved = true;
+        app_setenv("PWR_INIT_CFG", &env_mode, sizeof(env_mode));
+    }
+}
+
+bool pwr_env_saved(void)
+{
+    return env_saved;
 }
 
 void pwr_init(void)
