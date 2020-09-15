@@ -54,11 +54,11 @@ static void board_init(void)
 
 static void user_init(void)
 {
-#ifdef CONFIG_ENABLE_EC
+#ifdef CONFIG_ENABLE_ENCODER
     ec_init();
 #endif
 
-#if defined(CONFIG_ENABLE_PWR_KEY) || defined(CONFIG_ENABLE_SLP_KEY)
+#if defined(CONFIG_ENABLE_POWER_MODE_KEY) || defined(CONFIG_ENABLE_SLEEP_KEY)
     key_init();
 #endif
 
@@ -76,7 +76,7 @@ static void user_init(void)
     led_init();
 #endif
 
-#ifdef CONFIG_ENABLE_BLE_IF
+#ifdef CONFIG_ENABLE_BLE_CONTROL_IF
     ble_app_init();
 #endif
 }

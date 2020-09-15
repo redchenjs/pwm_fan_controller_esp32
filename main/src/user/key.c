@@ -16,26 +16,26 @@
 
 #define TAG "key"
 
-#if defined(CONFIG_ENABLE_PWR_KEY) || defined(CONFIG_ENABLE_SLP_KEY)
+#if defined(CONFIG_ENABLE_POWER_MODE_KEY) || defined(CONFIG_ENABLE_SLEEP_KEY)
 static const uint8_t gpio_pin[] = {
-#ifdef CONFIG_ENABLE_PWR_KEY
-    CONFIG_PWR_KEY_PIN,
+#ifdef CONFIG_ENABLE_POWER_MODE_KEY
+    CONFIG_POWER_MODE_KEY_PIN,
 #endif
-#ifdef CONFIG_ENABLE_SLP_KEY
-    CONFIG_SLP_KEY_PIN,
+#ifdef CONFIG_ENABLE_SLEEP_KEY
+    CONFIG_SLEEP_KEY_PIN,
 #endif
 };
 
 static const uint8_t gpio_val[] = {
-#ifdef CONFIG_ENABLE_PWR_KEY
-    #ifdef CONFIG_PWR_KEY_ACTIVE_LOW
+#ifdef CONFIG_ENABLE_POWER_MODE_KEY
+    #ifdef CONFIG_POWER_MODE_KEY_ACTIVE_LOW
         0,
     #else
         1,
     #endif
 #endif
-#ifdef CONFIG_ENABLE_SLP_KEY
-    #ifdef CONFIG_SLP_KEY_ACTIVE_LOW
+#ifdef CONFIG_ENABLE_SLEEP_KEY
+    #ifdef CONFIG_SLEEP_KEY_ACTIVE_LOW
         0,
     #else
         1,
@@ -44,20 +44,20 @@ static const uint8_t gpio_val[] = {
 };
 
 static const uint16_t gpio_hold[] = {
-#ifdef CONFIG_ENABLE_PWR_KEY
-    CONFIG_PWR_KEY_HOLD_TIME,
+#ifdef CONFIG_ENABLE_POWER_MODE_KEY
+    CONFIG_POWER_MODE_KEY_HOLD_TIME,
 #endif
-#ifdef CONFIG_ENABLE_SLP_KEY
-    CONFIG_SLP_KEY_HOLD_TIME,
+#ifdef CONFIG_ENABLE_SLEEP_KEY
+    CONFIG_SLEEP_KEY_HOLD_TIME,
 #endif
 };
 
 static void (*key_handle[])(void) = {
-#ifdef CONFIG_ENABLE_PWR_KEY
-    pwr_key_handle,
+#ifdef CONFIG_ENABLE_POWER_MODE_KEY
+    power_mode_key_handle,
 #endif
-#ifdef CONFIG_ENABLE_SLP_KEY
-    slp_key_handle,
+#ifdef CONFIG_ENABLE_SLEEP_KEY
+    sleep_key_handle,
 #endif
 };
 

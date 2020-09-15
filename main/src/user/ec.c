@@ -19,7 +19,7 @@
 
 #define TAG "ec"
 
-#ifdef CONFIG_ENABLE_EC
+#ifdef CONFIG_ENABLE_ENCODER
 static void pin_init(void)
 {
     gpio_config_t io_conf = {

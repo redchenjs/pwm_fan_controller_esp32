@@ -8,7 +8,7 @@
 #ifndef INC_USER_KEY_HANDLE_H_
 #define INC_USER_KEY_HANDLE_H_
 
-extern void pwr_key_handle(void);
-extern void slp_key_handle(void);
+extern void power_mode_key_handle(void);
+extern void sleep_key_handle(void);
 
 #endif /* INC_USER_KEY_HANDLE_H_ */

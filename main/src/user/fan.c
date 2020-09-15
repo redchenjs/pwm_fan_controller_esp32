@@ -159,7 +159,7 @@ static void fan_task(void *pvParameter)
 
         if (xQueueReceive(fan_evt_queue, &fan_evt, 500 / portTICK_RATE_MS)) {
             switch (fan_evt) {
-#ifdef CONFIG_ENABLE_EC
+#ifdef CONFIG_ENABLE_ENCODER
                 case EC_EVT_I: {
                     int16_t duty_tmp = fan_duty + 1;
                     fan_set_duty((duty_tmp < 255) ? duty_tmp : 255);
