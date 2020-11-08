@@ -10,9 +10,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "driver/dac.h"
-#include "driver/rtc_io.h"
-
 #include "core/os.h"
 #include "core/app.h"
 
@@ -46,8 +43,7 @@ void sleep_key_handle(void)
     fan_set_mode(FAN_MODE_IDX_OFF);
 
 #ifdef CONFIG_ENABLE_QC
-    dac_output_disable(DAC_CHANNEL_1);
-    dac_output_disable(DAC_CHANNEL_2);
+    pwr_deinit();
 #endif
 
 #ifdef CONFIG_ENABLE_BLE_CONTROL_IF
