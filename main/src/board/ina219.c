@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "esp_log.h"
+
 #include "driver/i2c.h"
 
 #define TAG "ina219"
@@ -36,14 +37,14 @@ typedef union {
 
 enum brng_settings {
     BRNG_16V_FSR = 0x0,
-    BRNG_32V_FSR = 0x1,
+    BRNG_32V_FSR = 0x1
 };
 
 enum pga_settings {
     PGA_GAIN_1_40MV  = 0x0,
     PGA_GAIN_2_80MV  = 0x1,
     PGA_GAIN_4_160MV = 0x2,
-    PGA_GAIN_8_320MV = 0x3,
+    PGA_GAIN_8_320MV = 0x3
 };
 
 enum adc_settings {
@@ -57,7 +58,7 @@ enum adc_settings {
     ADC_RES_12BIT_16S  = 0xC,
     ADC_RES_12BIT_32S  = 0xD,
     ADC_RES_12BIT_64S  = 0xE,
-    ADC_RES_12BIT_128S = 0xF,
+    ADC_RES_12BIT_128S = 0xF
 };
 
 enum mode_settings {
@@ -68,7 +69,7 @@ enum mode_settings {
     MODE_ADC_OFF                  = 0x4,
     MODE_SHUNT_VOLTAGE_CONTINUOUS = 0x5,
     MODE_BUS_VOLTAGE_CONTINUOUS   = 0x6,
-    MODE_SHUNT_AND_BUS_CONTINUOUS = 0x7,
+    MODE_SHUNT_AND_BUS_CONTINUOUS = 0x7
 };
 
 static uint16_t ina219_cal_val = 0;
