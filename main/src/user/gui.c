@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #include "esp_log.h"
+
 #include "driver/gpio.h"
 
 #include "gfx.h"
@@ -18,6 +19,7 @@
 
 #include "user/pwr.h"
 #include "user/fan.h"
+#include "user/gui.h"
 
 #define TAG "gui"
 
@@ -25,8 +27,7 @@ GDisplay *gui_gdisp = NULL;
 
 static GTimer gui_flush_timer;
 
-static bool gui_mode = true;
-static char text_buff[32] = {0};
+static gui_mode_t gui_mode = GUI_MODE_IDX_ON;
 
 static void gui_flush_task(void *pvParameter)
 {
@@ -36,6 +37,7 @@ static void gui_flush_task(void *pvParameter)
 static void gui_task(void *pvParameter)
 {
     font_t gui_font;
+    char text_buff[32] = {0};
     portTickType xLastWakeTime;
 
     gfxInit();
@@ -47,6 +49,10 @@ static void gui_task(void *pvParameter)
 
     ESP_LOGI(TAG, "started.");
 
+#ifdef CONFIG_ENABLE_GUI
+    gdispGSetOrientation(gui_gdisp, CONFIG_LCD_ROTATION_DEGREE);
+#endif
+
     snprintf(text_buff, sizeof(text_buff), "PWM:");
     gdispGFillStringBox(gui_gdisp, 2, 2, 93, 32, text_buff, gui_font, Yellow, Black, justifyLeft);
 
@@ -57,7 +63,8 @@ static void gui_task(void *pvParameter)
     gdispGFillStringBox(gui_gdisp, 2, 67, 93, 32, text_buff, gui_font, Magenta, Black, justifyLeft);
 
     while (1) {
-        if (gui_mode) {
+        switch (gui_mode) {
+        case GUI_MODE_IDX_ON:
             xLastWakeTime = xTaskGetTickCount();
 
             gdispGSetBacklight(gui_gdisp, 255);
@@ -90,34 +97,35 @@ static void gui_task(void *pvParameter)
             gtimerJab(&gui_flush_timer);
 
             vTaskDelayUntil(&xLastWakeTime, 20 / portTICK_RATE_MS);
-        } else {
-            if (xEventGroupGetBits(user_event_group) & GUI_RELOAD_BIT) {
-                xEventGroupClearBits(user_event_group, GUI_RELOAD_BIT);
-            }
 
+            break;
+        case GUI_MODE_IDX_OFF:
+        default:
             gdispGSetBacklight(gui_gdisp, 0);
 
             xEventGroupWaitBits(
                 user_event_group,
-                GUI_RELOAD_BIT,
+                GUI_RLD_MODE_BIT,
                 pdTRUE,
                 pdFALSE,
                 portMAX_DELAY
             );
+
+            break;
         }
     }
 }
 
-void gui_set_mode(bool val)
+void gui_set_mode(gui_mode_t idx)
 {
-    gui_mode = val;
+    gui_mode = idx;
 
-    xEventGroupSetBits(user_event_group, GUI_RELOAD_BIT);
+    xEventGroupSetBits(user_event_group, GUI_RLD_MODE_BIT);
 
     ESP_LOGI(TAG, "mode: %u", gui_mode);
 }
 
-bool gui_get_mode(void)
+gui_mode_t gui_get_mode(void)
 {
     return gui_mode;
 }

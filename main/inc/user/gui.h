@@ -8,8 +8,13 @@
 #ifndef INC_USER_GUI_H_
 #define INC_USER_GUI_H_
 
-extern void gui_set_mode(bool val);
-extern bool gui_get_mode(void);
+typedef enum {
+    GUI_MODE_IDX_ON  = 0x00,
+    GUI_MODE_IDX_OFF = 0xFF
+} gui_mode_t;
+
+extern void gui_set_mode(gui_mode_t idx);
+extern gui_mode_t gui_get_mode(void);
 
 extern void gui_init(void);
 

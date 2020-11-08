@@ -150,18 +150,36 @@ config ENABLE_GUI
     help
         Select this to enable GUI.
 
-config DEVICE_RST_PIN
-    int "Device RST Pin"
+choice LCD_ORIENTATION
+    prompt "LCD Orientation"
+    default LCD_ORIENTATION_NORMAL
+    depends on ENABLE_GUI
+    help
+        Select LCD orientation.
+
+config LCD_ORIENTATION_NORMAL
+    bool "Normal"
+config LCD_ORIENTATION_UPSIDE_DOWN
+    bool "Upside Down"
+endchoice
+
+config LCD_ROTATION_DEGREE
+    int
+    default  90 if LCD_ORIENTATION_NORMAL
+    default 270 if LCD_ORIENTATION_UPSIDE_DOWN
+
+config LCD_RST_PIN
+    int "LCD RST Pin"
     default 2
     depends on ENABLE_GUI
 
-config DEVICE_DC_PIN
-    int "Device DC Pin"
+config LCD_DC_PIN
+    int "LCD DC Pin"
     default 16
     depends on ENABLE_GUI
 
-config DEVICE_BL_PIN
-    int "Device BL Pin"
+config LCD_BL_PIN
+    int "LCD BL Pin"
     default 4
     depends on ENABLE_GUI
 
