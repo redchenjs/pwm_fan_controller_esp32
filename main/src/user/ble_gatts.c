@@ -44,7 +44,7 @@ static void profile_fan_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
 /* One gatt-based profile one app_id and one gatts_if, this array will store the gatts_if returned by ESP_GATTS_REG_EVT */
 gatts_profile_inst_t gatts_profile_tbl[PROFILE_IDX_MAX] = {
     [PROFILE_IDX_OTA] = { .gatts_cb = profile_ota_event_handler, .gatts_if = ESP_GATT_IF_NONE },
-    [PROFILE_IDX_FAN] = { .gatts_cb = profile_fan_event_handler, .gatts_if = ESP_GATT_IF_NONE },
+    [PROFILE_IDX_FAN] = { .gatts_cb = profile_fan_event_handler, .gatts_if = ESP_GATT_IF_NONE }
 };
 
 void gatts_ota_send_notification(const char *data, uint32_t len)
@@ -84,7 +84,7 @@ static void profile_ota_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
         esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &rsp);
         break;
     }
-    case ESP_GATTS_WRITE_EVT: {
+    case ESP_GATTS_WRITE_EVT:
         if (!param->write.is_prep) {
             if (param->write.handle == gatts_profile_tbl[PROFILE_IDX_OTA].descr_handle) {
                 desc_val_ota = param->write.value[1] << 8 | param->write.value[0];
@@ -97,7 +97,6 @@ static void profile_ota_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
             esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
         }
         break;
-    }
     case ESP_GATTS_EXEC_WRITE_EVT:
         break;
     case ESP_GATTS_MTU_EVT:
@@ -221,7 +220,7 @@ static void profile_fan_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
         esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &rsp);
         break;
     }
-    case ESP_GATTS_WRITE_EVT: {
+    case ESP_GATTS_WRITE_EVT:
         if (!param->write.is_prep) {
             if (param->write.handle == gatts_profile_tbl[PROFILE_IDX_FAN].descr_handle) {
                 desc_val_fan = param->write.value[1] << 8 | param->write.value[0];
@@ -248,7 +247,6 @@ static void profile_fan_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
             esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
         }
         break;
-    }
     case ESP_GATTS_EXEC_WRITE_EVT:
         break;
     case ESP_GATTS_MTU_EVT:
@@ -326,7 +324,7 @@ static void profile_fan_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
 
 void ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
-    /* If event is register event, store the gatts_if for each profile */
+    /* if event is register event, store the gatts_if for each profile */
     if (event == ESP_GATTS_REG_EVT) {
         if (param->reg.status == ESP_GATT_OK) {
             gatts_profile_tbl[param->reg.app_id].gatts_if = gatts_if;
@@ -338,9 +336,9 @@ void ble_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if,
         }
     }
 
-    /* If the gatts_if equal to profile A, call profile A cb handler,
+    /* if the gatts_if equal to profile A, call profile A cb handler,
      * so here call each profile's callback */
-    for (int idx=0; idx<PROFILE_IDX_MAX; idx++) {
+    for (int idx = 0; idx < PROFILE_IDX_MAX; idx++) {
         if (gatts_if == ESP_GATT_IF_NONE || /* ESP_GATT_IF_NONE, not specify a certain gatt_if, need to call every profile cb function */
             gatts_if == gatts_profile_tbl[idx].gatts_if) {
             if (gatts_profile_tbl[idx].gatts_cb) {

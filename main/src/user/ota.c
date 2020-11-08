@@ -15,14 +15,14 @@
 #include "freertos/ringbuf.h"
 #include "freertos/task.h"
 
-#include "driver/dac.h"
-
 #include "core/os.h"
 #include "core/app.h"
 
+#include "user/pwr.h"
 #include "user/fan.h"
-#include "user/gui.h"
+#include "user/key.h"
 #include "user/led.h"
+#include "user/gui.h"
 #include "user/ble_app.h"
 #include "user/ble_gatts.h"
 
@@ -45,7 +45,7 @@ enum cmd_idx {
     CMD_IDX_UPD = 0x0,
     CMD_IDX_RST = 0x1,
     CMD_IDX_RAM = 0x2,
-    CMD_IDX_VER = 0x3,
+    CMD_IDX_VER = 0x3
 };
 
 typedef struct {
@@ -54,10 +54,10 @@ typedef struct {
 } cmd_fmt_t;
 
 static const cmd_fmt_t cmd_fmt[] = {
-    { .prefix = 7, .format = CMD_FMT_UPD"\r\n" },   // Firmware Update
-    { .prefix = 7, .format = CMD_FMT_RST"\r\n" },   // Chip Reset
-    { .prefix = 7, .format = CMD_FMT_RAM"\r\n" },   // RAM Infomation
-    { .prefix = 7, .format = CMD_FMT_VER"\r\n" },   // Firmware Version
+    { .prefix = 7, .format = CMD_FMT_UPD"\r\n" },
+    { .prefix = 7, .format = CMD_FMT_RST"\r\n" },
+    { .prefix = 7, .format = CMD_FMT_RAM"\r\n" },
+    { .prefix = 7, .format = CMD_FMT_VER"\r\n" }
 };
 
 enum rsp_idx {
@@ -68,10 +68,10 @@ enum rsp_idx {
 };
 
 static const char rsp_str[][32] = {
-    "OK\r\n",           // OK
-    "FAIL\r\n",         // Fail
-    "DONE\r\n",         // Done
-    "ERROR\r\n",        // Error
+    "OK\r\n",
+    "FAIL\r\n",
+    "DONE\r\n",
+    "ERROR\r\n"
 };
 
 static bool data_err = false;
@@ -85,7 +85,7 @@ static esp_ota_handle_t update_handle = 0;
 
 static int ota_parse_command(const char *data)
 {
-    for (int i=0; i<sizeof(cmd_fmt)/sizeof(cmd_fmt_t); i++) {
+    for (int i = 0; i < sizeof(cmd_fmt) / sizeof(cmd_fmt_t); i++) {
         if (strncmp(cmd_fmt[i].format, data, cmd_fmt[i].prefix) == 0) {
             return i;
         }
@@ -197,13 +197,16 @@ void ota_exec(const char *data, uint32_t len)
                     ota_send_response(RSP_IDX_FAIL);
                 } else {
                     if (!update_handle) {
+#if defined(CONFIG_ENABLE_POWER_MODE_KEY) || defined(CONFIG_ENABLE_SLEEP_KEY)
+                        key_set_scan_mode(KEY_SCAN_MODE_IDX_OFF);
+#endif
 #ifdef CONFIG_ENABLE_LED
-                        led_set_mode(7);
+                        led_set_mode(LED_MODE_IDX_PULSE_D1);
 #endif
 #ifdef CONFIG_ENABLE_GUI
-                        gui_set_mode(0);
+                        gui_set_mode(GUI_MODE_IDX_OFF);
 #endif
-                        fan_set_mode(0);
+                        fan_set_mode(FAN_MODE_IDX_OFF);
                     }
 
                     update_partition = esp_ota_get_next_update_partition(NULL);
@@ -247,15 +250,17 @@ void ota_exec(const char *data, uint32_t len)
                 xEventGroupSetBits(user_event_group, BLE_GATTS_LOCK_BIT);
 
                 if (!update_handle) {
-#ifdef CONFIG_ENABLE_GUI
-                    gui_set_mode(0);
+#if defined(CONFIG_ENABLE_POWER_MODE_KEY) || defined(CONFIG_ENABLE_SLEEP_KEY)
+                    key_set_scan_mode(KEY_SCAN_MODE_IDX_OFF);
 #endif
-                    fan_set_mode(0);
+#ifdef CONFIG_ENABLE_GUI
+                    gui_set_mode(GUI_MODE_IDX_OFF);
+#endif
+                    fan_set_mode(FAN_MODE_IDX_OFF);
                 }
 
 #ifdef CONFIG_ENABLE_QC
-                dac_output_disable(DAC_CHANNEL_1);
-                dac_output_disable(DAC_CHANNEL_2);
+                pwr_deinit();
 #endif
 
                 esp_ble_gatts_close(gatts_profile_tbl[PROFILE_IDX_OTA].gatts_if,
@@ -312,12 +317,15 @@ void ota_end(void)
         esp_ota_end(update_handle);
         update_handle = 0;
 
-        fan_set_mode(1);
+        fan_set_mode(FAN_MODE_IDX_ON);
 #ifdef CONFIG_ENABLE_GUI
-        gui_set_mode(1);
+        gui_set_mode(GUI_MODE_IDX_ON);
 #endif
 #ifdef CONFIG_ENABLE_LED
-        led_set_mode(3);
+        led_set_mode(LED_MODE_IDX_BLINK_M0);
+#endif
+#if defined(CONFIG_ENABLE_POWER_MODE_KEY) || defined(CONFIG_ENABLE_SLEEP_KEY)
+        key_set_scan_mode(KEY_SCAN_MODE_IDX_ON);
 #endif
     }
 }

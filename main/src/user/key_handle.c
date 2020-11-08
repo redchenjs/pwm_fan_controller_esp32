@@ -28,7 +28,7 @@ void power_mode_key_handle(void)
 {
     key_set_scan_mode(KEY_SCAN_MODE_IDX_OFF);
 
-    pwr_set_mode((pwr_get_mode() + 1) % PWR_IDX_MAX);
+    pwr_set_mode((pwr_get_mode() + 1) % PWR_MODE_IDX_MAX);
     vTaskDelay(200 / portTICK_RATE_MS);
 
     key_set_scan_mode(KEY_SCAN_MODE_IDX_ON);

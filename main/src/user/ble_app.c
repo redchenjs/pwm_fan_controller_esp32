@@ -20,12 +20,12 @@
 #define BLE_GAP_TAG "ble_gap"
 
 esp_ble_adv_params_t adv_params = {
-    .adv_int_min       = 0x20,
-    .adv_int_max       = 0x40,
-    .adv_type          = ADV_TYPE_IND,
-    .own_addr_type     = BLE_ADDR_TYPE_PUBLIC,
-    .channel_map       = ADV_CHNL_ALL,
-    .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
+    .adv_int_min = 0x20,
+    .adv_int_max = 0x40,
+    .adv_type = ADV_TYPE_IND,
+    .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
+    .channel_map = ADV_CHNL_ALL,
+    .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY
 };
 
 static void ble_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -57,9 +57,9 @@ static void ble_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
 static void gap_config_adv_data(const char *name)
 {
     size_t len = strlen(name);
-    uint8_t raw_adv_data[len+5];
+    uint8_t raw_adv_data[len + 5];
 
-    // flag
+    // flags
     raw_adv_data[0] = 2;
     raw_adv_data[1] = ESP_BT_EIR_TYPE_FLAGS;
     raw_adv_data[2] = ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT;
@@ -67,7 +67,7 @@ static void gap_config_adv_data(const char *name)
     // adv name
     raw_adv_data[3] = len + 1;
     raw_adv_data[4] = ESP_BLE_AD_TYPE_NAME_CMPL;
-    memcpy(raw_adv_data+5, name, len);
+    memcpy(raw_adv_data + 5, name, len);
 
     esp_err_t raw_adv_ret = esp_ble_gap_config_adv_data_raw(raw_adv_data, sizeof(raw_adv_data));
     if (raw_adv_ret) {

@@ -19,8 +19,8 @@
 #define TAG "pwr"
 
 static bool qc_mode = false;
-static pwr_idx_t pwr_mode = PWR_IDX_DC;
-static pwr_idx_t env_mode = PWR_IDX_DC;
+static pwr_mode_t pwr_mode = PWR_MODE_IDX_DC;
+static pwr_mode_t env_mode = PWR_MODE_IDX_DC;
 
 static uint8_t env_cnt = 0;
 static bool env_saved = true;
@@ -34,38 +34,32 @@ static char pwr_mode_str[][8] = {
     "QC 12V",
 };
 
-void pwr_set_mode(pwr_idx_t idx)
+void pwr_set_mode(pwr_mode_t idx)
 {
     if (!qc_mode) {
         return;
     }
 
-    if (idx == PWR_IDX_QC_OFF) {
-        dac_output_disable(DAC_CHANNEL_1);
-        dac_output_disable(DAC_CHANNEL_2);
-        return;
-    }
-
     switch (idx) {
         default:
-        case PWR_IDX_QC_5V:
-            pwr_mode = PWR_IDX_QC_5V;
+        case PWR_MODE_IDX_QC_5V:
+            pwr_mode = PWR_MODE_IDX_QC_5V;
 
             dac_output_voltage(DAC_CHANNEL_1, 255 * (0.6 / 3.3));
             dac_output_voltage(DAC_CHANNEL_2, 255 * (0.0 / 3.3));
             dac_output_enable(DAC_CHANNEL_1);
             dac_output_enable(DAC_CHANNEL_2);
             break;
-        case PWR_IDX_QC_9V:
-            pwr_mode = PWR_IDX_QC_9V;
+        case PWR_MODE_IDX_QC_9V:
+            pwr_mode = PWR_MODE_IDX_QC_9V;
 
             dac_output_voltage(DAC_CHANNEL_1, 255 * (3.3 / 3.3));
             dac_output_voltage(DAC_CHANNEL_2, 255 * (0.6 / 3.3));
             dac_output_enable(DAC_CHANNEL_1);
             dac_output_enable(DAC_CHANNEL_2);
             break;
-        case PWR_IDX_QC_12V:
-            pwr_mode = PWR_IDX_QC_12V;
+        case PWR_MODE_IDX_QC_12V:
+            pwr_mode = PWR_MODE_IDX_QC_12V;
 
             dac_output_voltage(DAC_CHANNEL_1, 255 * (0.6 / 3.3));
             dac_output_voltage(DAC_CHANNEL_2, 255 * (0.6 / 3.3));
@@ -84,7 +78,7 @@ void pwr_set_mode(pwr_idx_t idx)
     env_cnt = 0;
 }
 
-pwr_idx_t pwr_get_mode(void)
+pwr_mode_t pwr_get_mode(void)
 {
     return pwr_mode;
 }
@@ -109,6 +103,12 @@ bool pwr_env_saved(void)
     return env_saved;
 }
 
+void pwr_deinit(void)
+{
+    dac_output_disable(DAC_CHANNEL_1);
+    dac_output_disable(DAC_CHANNEL_2);
+}
+
 void pwr_init(void)
 {
     int dp_raw = 0, dp_cnt = 0;
@@ -126,7 +126,7 @@ void pwr_init(void)
     adc2_get_raw(ADC_CHANNEL_9, ADC_WIDTH_BIT_12, &dp_raw);
 
     if (dp_raw < 255) {
-        pwr_mode = PWR_IDX_SDP;
+        pwr_mode = PWR_MODE_IDX_SDP;
 
         dac_output_disable(DAC_CHANNEL_1);
 
@@ -142,7 +142,7 @@ void pwr_init(void)
     dac_output_disable(DAC_CHANNEL_1);
 
     if (dp_raw > 255) {
-        pwr_mode = PWR_IDX_DCP;
+        pwr_mode = PWR_MODE_IDX_DCP;
 
         goto pwr_exit;
     }
