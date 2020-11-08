@@ -29,7 +29,7 @@ static void pin_init(void)
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = true,
         .pull_down_en = false,
-        .intr_type = GPIO_INTR_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE
     };
     gpio_config(&io_conf);
 }
@@ -56,7 +56,7 @@ static void ec_task(void *pvParameter)
     while (1) {
         xEventGroupWaitBits(
             user_event_group,
-            FAN_RUN_BIT,
+            FAN_CTRL_RUN_BIT,
             pdFALSE,
             pdFALSE,
             portMAX_DELAY

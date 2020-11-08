@@ -26,7 +26,6 @@
 
 xQueueHandle fan_evt_queue = NULL;
 
-static bool fan_mode = true;
 static uint16_t fan_rpm = 0;
 static uint16_t fan_duty = DEFAULT_FAN_DUTY;
 
@@ -38,6 +37,8 @@ static double time_sum = 0.0;
 
 static bool first_edge = true;
 static bool period_done = true;
+
+static fan_mode_t fan_mode = FAN_MODE_IDX_ON;
 
 static void IRAM_ATTR tim_isr_handler(void *arg)
 {
@@ -85,7 +86,7 @@ static void tim_init(void)
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_PAUSE,
         .alarm_en = TIMER_ALARM_EN,
-        .intr_type = TIMER_INTR_LEVEL,
+        .intr_type = TIMER_INTR_LEVEL
     };
     timer_init(TIMER_GROUP_0, TIMER_0, &tim_conf);
 
@@ -102,7 +103,7 @@ static void pin_init(void)
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = true,
         .pull_down_en = false,
-        .intr_type = GPIO_PIN_INTR_ANYEDGE,
+        .intr_type = GPIO_PIN_INTR_ANYEDGE
     };
     gpio_config(&io_conf);
 
@@ -114,20 +115,20 @@ static void pwm_init(void)
 {
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = LEDC_TIMER_8_BIT,
-        .freq_hz         = 25000,
-        .speed_mode      = LEDC_HIGH_SPEED_MODE,
-        .timer_num       = LEDC_TIMER_1,
-        .clk_cfg         = LEDC_AUTO_CLK,
+        .freq_hz = 25000,
+        .speed_mode = LEDC_HIGH_SPEED_MODE,
+        .timer_num = LEDC_TIMER_1,
+        .clk_cfg = LEDC_AUTO_CLK
     };
     ledc_timer_config(&ledc_timer);
 
     ledc_channel_config_t ledc_channel = {
-        .channel    = LEDC_CHANNEL_1,
-        .duty       = 0,
-        .gpio_num   = CONFIG_FAN_OUT_PIN,
+        .channel = LEDC_CHANNEL_1,
+        .duty = 0,
+        .gpio_num = CONFIG_FAN_OUT_PIN,
         .speed_mode = LEDC_HIGH_SPEED_MODE,
-        .hpoint     = 0,
-        .timer_sel  = LEDC_TIMER_1,
+        .hpoint = 0,
+        .timer_sel = LEDC_TIMER_1
     };
     ledc_channel_config(&ledc_channel);
 
@@ -144,14 +145,14 @@ static void fan_task(void *pvParameter)
     pin_init();
     pwm_init();
 
-    xEventGroupSetBits(user_event_group, FAN_RUN_BIT);
+    xEventGroupSetBits(user_event_group, FAN_CTRL_RUN_BIT);
 
     ESP_LOGI(TAG, "started.");
 
     while (1) {
         xEventGroupWaitBits(
             user_event_group,
-            FAN_RUN_BIT,
+            FAN_CTRL_RUN_BIT,
             pdFALSE,
             pdFALSE,
             portMAX_DELAY
@@ -231,12 +232,12 @@ uint16_t fan_get_rpm(void)
     return fan_rpm;
 }
 
-void fan_set_mode(bool val)
+void fan_set_mode(fan_mode_t idx)
 {
-    fan_mode = val;
+    fan_mode = idx;
 
-    if (fan_mode) {
-        xEventGroupSetBits(user_event_group, FAN_RUN_BIT);
+    if (fan_mode == FAN_MODE_IDX_ON) {
+        xEventGroupSetBits(user_event_group, FAN_CTRL_RUN_BIT);
 
         gpio_intr_enable(CONFIG_FAN_IN_PIN);
 
@@ -245,7 +246,7 @@ void fan_set_mode(bool val)
 
         ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_duty, 0);
     } else {
-        xEventGroupClearBits(user_event_group, FAN_RUN_BIT);
+        xEventGroupClearBits(user_event_group, FAN_CTRL_RUN_BIT);
 
         gpio_intr_disable(CONFIG_FAN_IN_PIN);
 
@@ -258,7 +259,7 @@ void fan_set_mode(bool val)
     ESP_LOGI(TAG, "mode: %u", fan_mode);
 }
 
-bool fan_get_mode(void)
+fan_mode_t fan_get_mode(void)
 {
     return fan_mode;
 }
