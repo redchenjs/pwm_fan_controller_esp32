@@ -18,6 +18,7 @@
 
 #include "user/pwr.h"
 #include "user/fan.h"
+#include "user/key.h"
 #include "user/led.h"
 #include "user/gui.h"
 #include "user/ble_gatts.h"
@@ -25,24 +26,24 @@
 #ifdef CONFIG_ENABLE_POWER_MODE_KEY
 void power_mode_key_handle(void)
 {
-    pwr_set_mode((pwr_get_mode() + 1) % PWR_IDX_MAX);
+    key_set_scan_mode(KEY_SCAN_MODE_IDX_OFF);
 
+    pwr_set_mode((pwr_get_mode() + 1) % PWR_IDX_MAX);
     vTaskDelay(200 / portTICK_RATE_MS);
 
-    xEventGroupSetBits(user_event_group, KEY_RUN_BIT);
+    key_set_scan_mode(KEY_SCAN_MODE_IDX_ON);
 }
 #endif
 
 #ifdef CONFIG_ENABLE_SLEEP_KEY
 void sleep_key_handle(void)
 {
-#ifdef CONFIG_ENABLE_LED
-    led_set_mode(7);
-#endif
+    key_set_scan_mode(KEY_SCAN_MODE_IDX_OFF);
+
 #ifdef CONFIG_ENABLE_GUI
-    gui_set_mode(0);
+    gui_set_mode(GUI_MODE_IDX_OFF);
 #endif
-    fan_set_mode(0);
+    fan_set_mode(FAN_MODE_IDX_OFF);
 
 #ifdef CONFIG_ENABLE_QC
     dac_output_disable(DAC_CHANNEL_1);
@@ -59,7 +60,7 @@ void sleep_key_handle(void)
 #else
     vTaskDelay(500 / portTICK_RATE_MS);
 
-    os_pwr_sleep_wait(0);
+    os_pwr_sleep_wait(OS_PWR_DUMMY_BIT);
 #endif
 }
 #endif
