@@ -9,13 +9,14 @@
 #define INC_USER_PWR_H_
 
 typedef enum {
-    PWR_IDX_DC     = 0x0,
-    PWR_IDX_SDP    = 0x1,
-    PWR_IDX_DCP    = 0x2,
+    PWR_IDX_DC     = 0x00,
+    PWR_IDX_SDP    = 0x01,
+    PWR_IDX_DCP    = 0x02,
+    PWR_IDX_QC_5V  = 0x03,
+    PWR_IDX_QC_9V  = 0x04,
+    PWR_IDX_QC_12V = 0x05,
 
-    PWR_IDX_QC_5V  = 0x3,
-    PWR_IDX_QC_9V  = 0x4,
-    PWR_IDX_QC_12V = 0x5,
+    PWR_IDX_QC_OFF,
 
     PWR_IDX_MAX
 } pwr_idx_t;

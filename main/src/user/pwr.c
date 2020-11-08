@@ -40,6 +40,12 @@ void pwr_set_mode(pwr_idx_t idx)
         return;
     }
 
+    if (idx == PWR_IDX_QC_OFF) {
+        dac_output_disable(DAC_CHANNEL_1);
+        dac_output_disable(DAC_CHANNEL_2);
+        return;
+    }
+
     switch (idx) {
         default:
         case PWR_IDX_QC_5V:
