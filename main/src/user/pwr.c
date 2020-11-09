@@ -31,7 +31,7 @@ static char pwr_mode_str[][8] = {
     "DCP 5V",
     "QC 5V",
     "QC 9V",
-    "QC 12V",
+    "QC 12V"
 };
 
 void pwr_set_mode(pwr_mode_t idx)

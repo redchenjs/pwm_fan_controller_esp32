@@ -25,13 +25,13 @@
 #define GATTS_OTA_TAG "gatts_ota"
 #define GATTS_FAN_TAG "gatts_fan"
 
-#define GATTS_SRV_UUID_OTA      0xFF52
-#define GATTS_CHAR_UUID_OTA     0x5201
-#define GATTS_NUM_HANDLE_OTA    4
+#define GATTS_SRV_UUID_OTA   0xFF52
+#define GATTS_CHAR_UUID_OTA  0x5201
+#define GATTS_NUM_HANDLE_OTA 4
 
-#define GATTS_SRV_UUID_FAN      0xFF53
-#define GATTS_CHAR_UUID_FAN     0x5301
-#define GATTS_NUM_HANDLE_FAN    4
+#define GATTS_SRV_UUID_FAN   0xFF53
+#define GATTS_CHAR_UUID_FAN  0x5301
+#define GATTS_NUM_HANDLE_FAN 4
 
 static uint16_t desc_val_ota = 0x0000;
 static uint16_t desc_val_fan = 0x0000;
@@ -226,16 +226,15 @@ static void profile_fan_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
                 desc_val_fan = param->write.value[1] << 8 | param->write.value[0];
             } else {
                 switch (param->write.value[0]) {
-                case 0xEF: {
-                    if (param->write.len == 1) {            // Restore Default Configuration
+                case 0xEF:
+                    if (param->write.len == 1) {            // restore default configuration
                         fan_set_duty(DEFAULT_FAN_DUTY);
-                    } else if (param->write.len == 8) {     // Update with New Configuration
+                    } else if (param->write.len == 8) {     // apply new configuration
                         fan_set_duty(param->write.value[6]);
                     } else {
                         ESP_LOGE(GATTS_FAN_TAG, "command 0x%02X error", param->write.value[0]);
                     }
                     break;
-                }
                 default:
                     ESP_LOGW(GATTS_FAN_TAG, "unknown command: 0x%02X", param->write.value[0]);
                     break;
