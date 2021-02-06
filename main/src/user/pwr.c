@@ -47,24 +47,18 @@ void pwr_set_mode(pwr_mode_t idx)
 
             dac_output_voltage(DAC_CHANNEL_1, 255 * (0.6 / 3.3));
             dac_output_voltage(DAC_CHANNEL_2, 255 * (0.0 / 3.3));
-            dac_output_enable(DAC_CHANNEL_1);
-            dac_output_enable(DAC_CHANNEL_2);
             break;
         case PWR_MODE_IDX_QC_9V:
             pwr_mode = PWR_MODE_IDX_QC_9V;
 
             dac_output_voltage(DAC_CHANNEL_1, 255 * (3.3 / 3.3));
             dac_output_voltage(DAC_CHANNEL_2, 255 * (0.6 / 3.3));
-            dac_output_enable(DAC_CHANNEL_1);
-            dac_output_enable(DAC_CHANNEL_2);
             break;
         case PWR_MODE_IDX_QC_12V:
             pwr_mode = PWR_MODE_IDX_QC_12V;
 
             dac_output_voltage(DAC_CHANNEL_1, 255 * (0.6 / 3.3));
             dac_output_voltage(DAC_CHANNEL_2, 255 * (0.6 / 3.3));
-            dac_output_enable(DAC_CHANNEL_1);
-            dac_output_enable(DAC_CHANNEL_2);
             break;
     }
 
@@ -148,6 +142,12 @@ void pwr_init(void)
     }
 
     qc_mode = true;
+
+    dac_output_voltage(DAC_CHANNEL_1, 255 * (0.6 / 3.3));
+    dac_output_voltage(DAC_CHANNEL_2, 255 * (0.0 / 3.3));
+
+    dac_output_enable(DAC_CHANNEL_1);
+    dac_output_enable(DAC_CHANNEL_2);
 
     size_t length = sizeof(env_mode);
     app_getenv("PWR_INIT_CFG", &env_mode, &length);

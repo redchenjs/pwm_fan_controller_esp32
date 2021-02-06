@@ -47,8 +47,7 @@ void sleep_key_handle(void)
 #endif
 
 #ifdef CONFIG_ENABLE_BLE_CONTROL_IF
-    EventBits_t uxBits = xEventGroupGetBits(user_event_group);
-    if (!(uxBits & BLE_GATTS_IDLE_BIT)) {
+    if (!(xEventGroupGetBits(user_event_group) & BLE_GATTS_IDLE_BIT)) {
         esp_ble_gatts_close(gatts_profile_tbl[PROFILE_IDX_OTA].gatts_if,
                             gatts_profile_tbl[PROFILE_IDX_OTA].conn_id);
     }

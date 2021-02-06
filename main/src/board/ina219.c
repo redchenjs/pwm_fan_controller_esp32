@@ -239,8 +239,6 @@ float ina219_get_power_mw(void)
 
 void ina219_init(void)
 {
-    memset(&ina219_conf, 0x00, sizeof(ina219_conf_t));
-
     ina219_set_calibration_32v_2a();
 
     ESP_LOGI(TAG, "initialized.");

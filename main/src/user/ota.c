@@ -190,10 +190,9 @@ void ota_exec(const char *data, uint32_t len)
                 sscanf(data, CMD_FMT_UPD, &data_length);
                 ESP_LOGI(OTA_TAG, "GET command: "CMD_FMT_UPD, data_length);
 
-                EventBits_t uxBits = xEventGroupGetBits(user_event_group);
                 if (data_length == 0) {
                     ota_send_response(RSP_IDX_ERROR);
-                } else if (uxBits & BLE_GATTS_LOCK_BIT) {
+                } else if (xEventGroupGetBits(user_event_group) & BLE_GATTS_LOCK_BIT) {
                     ota_send_response(RSP_IDX_FAIL);
                 } else {
                     if (!update_handle) {
