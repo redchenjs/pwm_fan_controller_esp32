@@ -14,7 +14,7 @@
 #ifdef CONFIG_ENABLE_POWER_MONITOR
 void i2c0_init(void)
 {
-    i2c_config_t conf = {
+    i2c_config_t i2c_conf = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = CONFIG_I2C_SDA_PIN,
         .scl_io_num = CONFIG_I2C_SCL_PIN,
@@ -22,10 +22,10 @@ void i2c0_init(void)
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .master.clk_speed = 400000
     };
-    ESP_ERROR_CHECK(i2c_param_config(I2C_NUM_0, &conf));
-    ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, conf.mode, 0, 0, 0));
-    ESP_ERROR_CHECK(i2c_set_timeout(I2C_NUM_0, 80 * (I2C_APB_CLK_FREQ / conf.master.clk_speed)));
+    ESP_ERROR_CHECK(i2c_param_config(I2C_NUM_0, &i2c_conf));
+    ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, i2c_conf.mode, 0, 0, 0));
+    ESP_ERROR_CHECK(i2c_set_timeout(I2C_NUM_0, 80 * (I2C_APB_CLK_FREQ / i2c_conf.master.clk_speed)));
 
-    ESP_LOGI(I2C0_TAG, "initialized, sda: %d, scl: %d", conf.sda_io_num, conf.scl_io_num);
+    ESP_LOGI(I2C0_TAG, "initialized, sda: %d, scl: %d", i2c_conf.sda_io_num, i2c_conf.scl_io_num);
 }
 #endif
