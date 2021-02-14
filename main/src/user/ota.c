@@ -124,7 +124,7 @@ static void ota_write_task(void *pvParameter)
             continue;
         }
 
-        err = esp_ota_write(update_handle, (const void *)data, size);
+        err = esp_ota_write(update_handle, data, size);
         if (err != ESP_OK) {
             ESP_LOGE(OTA_TAG, "write failed.");
 
@@ -161,7 +161,7 @@ static void ota_write_task(void *pvParameter)
             }
         }
 
-        vRingbufferReturnItem(ota_buff, (void *)data);
+        vRingbufferReturnItem(ota_buff, data);
     }
 
     ESP_LOGI(OTA_TAG, "write done.");
