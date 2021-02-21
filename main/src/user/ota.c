@@ -130,7 +130,7 @@ static void ota_write_task(void *pvParameter)
 
             data_err = true;
 
-            ota_send_response(RSP_IDX_FAIL);
+            ota_send_response(RSP_IDX_ERROR);
 
             goto write_fail;
         }
@@ -144,7 +144,7 @@ static void ota_write_task(void *pvParameter)
 
                 data_err = true;
 
-                ota_send_response(RSP_IDX_FAIL);
+                ota_send_response(RSP_IDX_ERROR);
 
                 goto write_fail;
             }
@@ -155,7 +155,7 @@ static void ota_write_task(void *pvParameter)
 
                 data_err = true;
 
-                ota_send_response(RSP_IDX_FAIL);
+                ota_send_response(RSP_IDX_ERROR);
 
                 goto write_fail;
             }
@@ -196,10 +196,10 @@ void ota_exec(const char *data, uint32_t len)
                 sscanf(data, CMD_FMT_UPD, &data_length);
                 ESP_LOGI(OTA_TAG, "GET command: "CMD_FMT_UPD, data_length);
 
-                if (data_length == 0) {
-                    ota_send_response(RSP_IDX_ERROR);
-                } else if (xEventGroupGetBits(user_event_group) & BLE_GATTS_LOCK_BIT) {
+                if (xEventGroupGetBits(user_event_group) & BLE_GATTS_LOCK_BIT) {
                     ota_send_response(RSP_IDX_FAIL);
+                } else if (data_length == 0) {
+                    ota_send_response(RSP_IDX_ERROR);
                 } else {
                     if (!update_handle) {
 #if defined(CONFIG_ENABLE_POWER_MODE_KEY) || defined(CONFIG_ENABLE_SLEEP_KEY)
