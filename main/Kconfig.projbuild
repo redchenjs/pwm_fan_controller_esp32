@@ -4,28 +4,20 @@ menu "Bluetooth Configuration"
 config BT_NAME
     string "Bluetooth Name"
     default "PWM Fan Controller"
-    help
-        Bluetooth name exposed by the device.
 
 config ENABLE_BLE_CONTROL_IF
     bool "Enable BLE Control Interface"
     default y
-    help
-        Select this to enable BLE OTA and RC features.
 endmenu
 
 menu "Power Configuration"
 config ENABLE_QC
     bool "Enable Quick Charge"
     default y
-    help
-        Enable quick charge feature.
 
 config ENABLE_POWER_MONITOR
     bool "Enable Power Monitor"
     default y
-    help
-        Select this to enable power monitor.
 
 config I2C_SDA_PIN
     int "I2C SDA Pin"
@@ -52,15 +44,11 @@ menu "Key Configuration"
 config ENABLE_ENCODER
     bool "Enable Encoder"
     default y
-    help
-        Select this to enable encoder input.
 
 choice EC_TYPE
     prompt "Encoder Type"
     default EC_TYPE_1P2D
     depends on ENABLE_ENCODER
-    help
-        Select the encoder type.
 
     config EC_TYPE_1P1D
         bool "1-Pulse 1-Detent"
@@ -87,8 +75,6 @@ config ENABLE_POWER_MODE_KEY
     bool "Enable Power Mode Key"
     default y
     depends on ENABLE_QC
-    help
-        Select this to enable Power Mode Key.
 
 config POWER_MODE_KEY_HOLD_TIME
     int "Power Mode Key Hold Time (ms)"
@@ -99,8 +85,6 @@ choice POWER_MODE_KEY_ACTIVE_LEVEL
     prompt "Power Mode Key Active Level"
     default POWER_MODE_KEY_ACTIVE_LOW
     depends on ENABLE_POWER_MODE_KEY
-    help
-        Select Power Mode Key Active Level.
 
 config POWER_MODE_KEY_ACTIVE_HIGH
     bool "Active High"
@@ -116,8 +100,6 @@ config POWER_MODE_KEY_PIN
 config ENABLE_SLEEP_KEY
     bool "Enable Sleep Key"
     default y
-    help
-        Select this to enable Sleep Key.
 
 config SLEEP_KEY_HOLD_TIME
     int "Sleep Key Hold Time (ms)"
@@ -128,8 +110,6 @@ choice SLEEP_KEY_ACTIVE_LEVEL
     prompt "Sleep Key Active Level"
     default SLEEP_KEY_ACTIVE_LOW
     depends on ENABLE_SLEEP_KEY
-    help
-        Select Sleep Key Active Level.
 
 config SLEEP_KEY_ACTIVE_HIGH
     bool "Active High"
@@ -147,15 +127,11 @@ menu "GUI Configuration"
 config ENABLE_GUI
     bool "Enable GUI"
     default y
-    help
-        Select this to enable GUI.
 
 choice LCD_ORIENTATION
     prompt "LCD Orientation"
     default LCD_ORIENTATION_NORMAL
     depends on ENABLE_GUI
-    help
-        Select LCD orientation.
 
 config LCD_ORIENTATION_NORMAL
     bool "Normal"
@@ -203,15 +179,11 @@ menu "LED Configuration"
 config ENABLE_LED
     bool "Enable LED"
     default n
-    help
-        Select this to enable LED Output.
 
 choice LED_ACTIVE_LEVEL
     prompt "LED Active Level"
     default LED_ACTIVE_HIGH
     depends on ENABLE_LED
-    help
-        Select LED Active Level.
 
 config LED_ACTIVE_HIGH
     bool "Active High"
