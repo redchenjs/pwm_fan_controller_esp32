@@ -9,7 +9,7 @@
 
 #include "esp_log.h"
 
-#include "driver/i2c.h"
+#include "chip/i2c.h"
 
 #define TAG "ina219"
 
@@ -91,7 +91,7 @@ static void ina219_reg_write(uint8_t reg, const uint8_t *buff)
 
     i2c_master_stop(cmd);
 
-    i2c_master_cmd_begin(I2C_NUM_0, cmd, portMAX_DELAY);
+    i2c_master_cmd_begin(I2C_HOST_NUM, cmd, portMAX_DELAY);
 
     i2c_cmd_link_delete(cmd);
 }
@@ -114,7 +114,7 @@ static void ina219_reg_read(uint8_t reg, uint8_t *buff)
 
     i2c_master_stop(cmd);
 
-    i2c_master_cmd_begin(I2C_NUM_0, cmd, portMAX_DELAY);
+    i2c_master_cmd_begin(I2C_HOST_NUM, cmd, portMAX_DELAY);
 
     i2c_cmd_link_delete(cmd);
 }

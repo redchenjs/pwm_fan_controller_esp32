@@ -37,11 +37,11 @@ static void chip_init(void)
     bt_init();
 
 #ifdef CONFIG_ENABLE_GUI
-    hspi_init();
+    spi_host_init();
 #endif
 
 #ifdef CONFIG_ENABLE_POWER_MONITOR
-    i2c0_init();
+    i2c_host_init();
 #endif
 }
 
