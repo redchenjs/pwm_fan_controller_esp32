@@ -1,13 +1,14 @@
 menu "PWM Fan Controller"
 
 menu "Bluetooth Configuration"
-config BT_NAME
-    string "Bluetooth Name"
-    default "PWM Fan Controller"
-
 config ENABLE_BLE_CONTROL_IF
     bool "Enable BLE Control Interface"
     default y
+
+config BLE_NAME
+    string "BLE Control Interface Name"
+    default "PWM Fan Controller"
+    depends on ENABLE_BLE_CONTROL_IF
 endmenu
 
 menu "Power Configuration"
