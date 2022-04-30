@@ -27,7 +27,6 @@
 xQueueHandle fan_evt_queue = NULL;
 
 static uint16_t fan_rpm = 0;
-static uint16_t fan_duty = DEFAULT_FAN_DUTY;
 
 static uint8_t env_cnt = 0;
 static bool env_saved = true;
@@ -39,6 +38,59 @@ static bool first_edge = true;
 static bool period_done = true;
 
 static fan_mode_t fan_mode = FAN_MODE_IDX_ON;
+static fan_conf_t fan_conf = {
+    .duty    = DEFAULT_FAN_DUTY,
+    .color_h = DEFAULT_FAN_COLOR_H,
+    .color_s = DEFAULT_FAN_COLOR_S,
+    .color_l = DEFAULT_FAN_COLOR_L
+};
+
+#ifdef CONFIG_ENABLE_FAN_RGB
+static float hue2rgb(float v1, float v2, float vH)
+{
+    if (vH < 0.0) {
+        vH += 1.0;
+    } else if (vH > 1.0) {
+        vH -= 1.0;
+    }
+
+    if (6.0 * vH < 1.0) {
+        return v1 + (v2 - v1) * 6.0 * vH;
+    } else if (2.0 * vH < 1.0) {
+        return v2;
+    } else if (3.0 * vH < 2.0) {
+        return v1 + (v2 - v1) * (2.0 / 3.0 - vH) * 6.0;
+    } else {
+        return v1;
+    }
+}
+
+static uint32_t hsl2rgb(float H, float S, float L)
+{
+    float v1, v2;
+    uint8_t R, G, B;
+
+    if (S == 0.0) {
+        R = 255.0 * L;
+        G = 255.0 * L;
+        B = 255.0 * L;
+    } else {
+        if (L < 0.5) {
+            v2 = L * (1.0 + S);
+        } else {
+            v2 = (L + S) - (L * S);
+        }
+
+        v1 = 2.0 * L - v2;
+
+        R = 255.0 * hue2rgb(v1, v2, H + 1.0 / 3.0);
+        G = 255.0 * hue2rgb(v1, v2, H);
+        B = 255.0 * hue2rgb(v1, v2, H - 1.0 / 3.0);
+    }
+
+    return (uint32_t)(R << 16 | G << 8 | B);
+}
+#endif
 
 static void IRAM_ATTR tim_isr_handler(void *arg)
 {
@@ -133,7 +185,27 @@ static void pwm_init(void)
     ledc_channel_config(&ledc_channel);
 
     ledc_fade_func_install(0);
-    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_duty, 0);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_conf.duty, 0);
+
+#ifdef CONFIG_ENABLE_FAN_RGB
+    ledc_channel.channel = LEDC_CHANNEL_2;
+    ledc_channel.gpio_num = CONFIG_FAN_RGB_R_PIN;
+    ledc_channel_config(&ledc_channel);
+
+    ledc_channel.channel = LEDC_CHANNEL_3;
+    ledc_channel.gpio_num = CONFIG_FAN_RGB_G_PIN;
+    ledc_channel_config(&ledc_channel);
+
+    ledc_channel.channel = LEDC_CHANNEL_4;
+    ledc_channel.gpio_num = CONFIG_FAN_RGB_B_PIN;
+    ledc_channel_config(&ledc_channel);
+
+    uint32_t pixel_color = hsl2rgb(fan_conf.color_h / 511.0, fan_conf.color_s / 255.0, fan_conf.color_l / 511.0);
+
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_2, 0xff & (pixel_color >> 16), 0);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_3, 0xff & (pixel_color >> 8), 0);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_4, 0xff & (pixel_color), 0);
+#endif
 }
 
 static void fan_task(void *pvParameter)
@@ -162,23 +234,27 @@ static void fan_task(void *pvParameter)
             switch (fan_evt) {
 #ifdef CONFIG_ENABLE_ENCODER
                 case EC_EVT_I: {
-                    int16_t duty_tmp = fan_duty + 1;
-                    fan_set_duty((duty_tmp < 255) ? duty_tmp : 255);
+                    int16_t duty_tmp = fan_conf.duty + 1;
+                    fan_conf.duty = (duty_tmp < 255) ? duty_tmp : 255;
+                    fan_set_conf(&fan_conf);
                     break;
                 }
                 case EC_EVT_D: {
-                    int16_t duty_tmp = fan_duty - 1;
-                    fan_set_duty((duty_tmp > 0) ? duty_tmp : 0);
+                    int16_t duty_tmp = fan_conf.duty - 1;
+                    fan_conf.duty = (duty_tmp > 0) ? duty_tmp : 0;
+                    fan_set_conf(&fan_conf);
                     break;
                 }
                 case EC_EVT_I_B: {
-                    int16_t duty_tmp = fan_duty + 10;
-                    fan_set_duty((duty_tmp < 255) ? duty_tmp : 255);
+                    int16_t duty_tmp = fan_conf.duty + 10;
+                    fan_conf.duty = (duty_tmp < 255) ? duty_tmp : 255;
+                    fan_set_conf(&fan_conf);
                     break;
                 }
                 case EC_EVT_D_B: {
-                    int16_t duty_tmp = fan_duty - 10;
-                    fan_set_duty((duty_tmp > 0) ? duty_tmp : 0);
+                    int16_t duty_tmp = fan_conf.duty - 10;
+                    fan_conf.duty = (duty_tmp > 0) ? duty_tmp : 0;
+                    fan_set_conf(&fan_conf);
                     break;
                 }
 #endif
@@ -210,23 +286,6 @@ static void fan_task(void *pvParameter)
     }
 }
 
-void fan_set_duty(uint16_t val)
-{
-    if (fan_duty != val) {
-        fan_duty = val;
-
-        env_saved = false;
-        ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_duty, 0);
-    }
-
-    env_cnt = 0;
-}
-
-uint16_t fan_get_duty(void)
-{
-    return fan_duty;
-}
-
 uint16_t fan_get_rpm(void)
 {
     return fan_rpm;
@@ -244,7 +303,7 @@ void fan_set_mode(fan_mode_t idx)
         timer_start(TIMER_GROUP_0, TIMER_0);
         timer_enable_intr(TIMER_GROUP_0, TIMER_0);
 
-        ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_duty, 0);
+        ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_conf.duty, 0);
     } else {
         xEventGroupClearBits(user_event_group, FAN_CTRL_RUN_BIT);
 
@@ -264,13 +323,44 @@ fan_mode_t fan_get_mode(void)
     return fan_mode;
 }
 
+void fan_set_conf(fan_conf_t *cfg)
+{
+    fan_conf.duty = cfg->duty;
+
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, fan_conf.duty, 0);
+
+#ifdef CONFIG_ENABLE_FAN_RGB
+    fan_conf.color_h = cfg->color_h;
+    fan_conf.color_s = cfg->color_s;
+    fan_conf.color_l = cfg->color_l;
+
+    uint32_t pixel_color = hsl2rgb(fan_conf.color_h / 511.0, fan_conf.color_s / 255.0, fan_conf.color_l / 511.0);
+
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_2, 0xff & (pixel_color >> 16), 0);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_3, 0xff & (pixel_color >> 8), 0);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_4, 0xff & (pixel_color), 0);
+
+    ESP_LOGI(TAG, "duty: 0x%02X, hue: 0x%03X, saturation: 0x%02X, lightness: 0x%03X", fan_conf.duty, fan_conf.color_h, fan_conf.color_s, fan_conf.color_l);
+#else
+    ESP_LOGI(TAG, "duty: 0x%02X", fan_conf.duty);
+#endif
+
+    env_saved = false;
+    env_cnt = 0;
+}
+
+fan_conf_t *fan_get_conf(void)
+{
+    return &fan_conf;
+}
+
 void fan_env_save(void)
 {
     if (!env_saved && env_cnt++ == 50) {
         env_cnt = 0;
 
         env_saved = true;
-        app_setenv("FAN_INIT_CFG", &fan_duty, sizeof(fan_duty));
+        app_setenv("FAN_INIT_CFG", &fan_conf, sizeof(fan_conf));
     }
 }
 
@@ -281,8 +371,8 @@ bool fan_env_saved(void)
 
 void fan_init(void)
 {
-    size_t length = sizeof(fan_duty);
-    app_getenv("FAN_INIT_CFG", &fan_duty, &length);
+    size_t length = sizeof(fan_conf);
+    app_getenv("FAN_INIT_CFG", &fan_conf, &length);
 
     fan_evt_queue = xQueueCreate(10, sizeof(uint32_t));
 

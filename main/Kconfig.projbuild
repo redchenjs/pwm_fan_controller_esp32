@@ -1,34 +1,34 @@
 menu "PWM Fan Controller"
 
 menu "Bluetooth Configuration"
-config ENABLE_BLE_CONTROL_IF
-    bool "Enable BLE Control Interface"
-    default y
+    config ENABLE_BLE_CONTROL_IF
+        bool "Enable BLE Control Interface"
+        default y
 
-config BLE_NAME
-    string "BLE Control Interface Name"
-    default "PWM Fan Controller"
-    depends on ENABLE_BLE_CONTROL_IF
+        config BLE_NAME
+            string "BLE Control Interface Name"
+            default "PWM Fan Controller"
+            depends on ENABLE_BLE_CONTROL_IF
 endmenu
 
 menu "Power Configuration"
-config ENABLE_QC
-    bool "Enable Quick Charge"
-    default y
+    config ENABLE_QC
+        bool "Enable Quick Charge"
+        default y
 
-config ENABLE_POWER_MONITOR
-    bool "Enable Power Monitor"
-    default y
+    config ENABLE_POWER_MONITOR
+        bool "Enable Power Monitor"
+        default y
 
-config I2C_SDA_PIN
-    int "I2C SDA Pin"
-    default 13
-    depends on ENABLE_POWER_MONITOR
+        config I2C_SDA_PIN
+            int "I2C SDA Pin"
+            default 13
+            depends on ENABLE_POWER_MONITOR
 
-config I2C_SCL_PIN
-    int "I2C SCL Pin"
-    default 17
-    depends on ENABLE_POWER_MONITOR
+        config I2C_SCL_PIN
+            int "I2C SCL Pin"
+            default 17
+            depends on ENABLE_POWER_MONITOR
 endmenu
 
 menu "Fan Configuration"
@@ -39,163 +39,181 @@ menu "Fan Configuration"
     config FAN_IN_PIN
         int "Fan In Pin"
         default 27
+
+    config ENABLE_FAN_RGB
+        bool "Enable Fan RGB Support"
+        default n
+
+        config FAN_RGB_R_PIN
+            int "Fan RGB Red Pin"
+            default 15
+            depends on ENABLE_FAN_RGB
+
+        config FAN_RGB_G_PIN
+            int "Fan RGB Green Pin"
+            default 2
+            depends on ENABLE_FAN_RGB
+
+        config FAN_RGB_B_PIN
+            int "Fan RGB Blue Pin"
+            default 12
+            depends on ENABLE_FAN_RGB
 endmenu
 
 menu "Key Configuration"
-config ENABLE_ENCODER
-    bool "Enable Encoder"
-    default y
+    config ENABLE_ENCODER
+        bool "Enable Encoder"
+        default y
 
-choice EC_TYPE
-    prompt "Encoder Type"
-    default EC_TYPE_1P2D
-    depends on ENABLE_ENCODER
+        choice EC_TYPE
+            prompt "Encoder Type"
+            default EC_TYPE_1P2D
+            depends on ENABLE_ENCODER
 
-    config EC_TYPE_1P1D
-        bool "1-Pulse 1-Detent"
-    config EC_TYPE_1P2D
-        bool "1-Pulse 2-Detents"
-endchoice
+            config EC_TYPE_1P1D
+                bool "1-Pulse 1-Detent"
+            config EC_TYPE_1P2D
+                bool "1-Pulse 2-Detents"
+        endchoice
 
-config EC_PHASE_A_PIN
-    int "Encoder Phase A Pin"
-    default 21
-    depends on ENABLE_ENCODER
+        config EC_PHASE_A_PIN
+            int "Encoder Phase A Pin"
+            default 21
+            depends on ENABLE_ENCODER
 
-config EC_PHASE_B_PIN
-    int "Encoder Phase B Pin"
-    default 22
-    depends on ENABLE_ENCODER
+        config EC_PHASE_B_PIN
+            int "Encoder Phase B Pin"
+            default 22
+            depends on ENABLE_ENCODER
 
-config EC_BUTTON_PIN
-    int "Encoder Button Pin"
-    default 32
-    depends on ENABLE_ENCODER
+        config EC_BUTTON_PIN
+            int "Encoder Button Pin"
+            default 32
+            depends on ENABLE_ENCODER
 
-config ENABLE_POWER_MODE_KEY
-    bool "Enable Power Mode Key"
-    default y
-    depends on ENABLE_QC
+    config ENABLE_POWER_MODE_KEY
+        bool "Enable Power Mode Key"
+        default y
+        depends on ENABLE_QC
 
-config POWER_MODE_KEY_HOLD_TIME
-    int "Power Mode Key Hold Time (ms)"
-    default 50
-    depends on ENABLE_POWER_MODE_KEY
+        config POWER_MODE_KEY_HOLD_TIME
+            int "Power Mode Key Hold Time (ms)"
+            default 50
+            depends on ENABLE_POWER_MODE_KEY
 
-choice POWER_MODE_KEY_ACTIVE_LEVEL
-    prompt "Power Mode Key Active Level"
-    default POWER_MODE_KEY_ACTIVE_LOW
-    depends on ENABLE_POWER_MODE_KEY
+        choice POWER_MODE_KEY_ACTIVE_LEVEL
+            prompt "Power Mode Key Active Level"
+            default POWER_MODE_KEY_ACTIVE_LOW
+            depends on ENABLE_POWER_MODE_KEY
 
-config POWER_MODE_KEY_ACTIVE_HIGH
-    bool "Active High"
-config POWER_MODE_KEY_ACTIVE_LOW
-    bool "Active Low"
-endchoice
+            config POWER_MODE_KEY_ACTIVE_HIGH
+                bool "Active High"
+            config POWER_MODE_KEY_ACTIVE_LOW
+                bool "Active Low"
+        endchoice
 
-config POWER_MODE_KEY_PIN
-    int "Power Mode Key Pin"
-    default 0
-    depends on ENABLE_POWER_MODE_KEY
+        config POWER_MODE_KEY_PIN
+            int "Power Mode Key Pin"
+            default 0
+            depends on ENABLE_POWER_MODE_KEY
 
-config ENABLE_SLEEP_KEY
-    bool "Enable Sleep Key"
-    default y
+    config ENABLE_SLEEP_KEY
+        bool "Enable Sleep Key"
+        default y
 
-config SLEEP_KEY_HOLD_TIME
-    int "Sleep Key Hold Time (ms)"
-    default 50
-    depends on ENABLE_SLEEP_KEY
+        config SLEEP_KEY_HOLD_TIME
+            int "Sleep Key Hold Time (ms)"
+            default 50
+            depends on ENABLE_SLEEP_KEY
 
-choice SLEEP_KEY_ACTIVE_LEVEL
-    prompt "Sleep Key Active Level"
-    default SLEEP_KEY_ACTIVE_LOW
-    depends on ENABLE_SLEEP_KEY
+        choice SLEEP_KEY_ACTIVE_LEVEL
+            prompt "Sleep Key Active Level"
+            default SLEEP_KEY_ACTIVE_LOW
+            depends on ENABLE_SLEEP_KEY
 
-config SLEEP_KEY_ACTIVE_HIGH
-    bool "Active High"
-config SLEEP_KEY_ACTIVE_LOW
-    bool "Active Low"
-endchoice
+            config SLEEP_KEY_ACTIVE_HIGH
+                bool "Active High"
+            config SLEEP_KEY_ACTIVE_LOW
+                bool "Active Low"
+        endchoice
 
-config SLEEP_KEY_PIN
-    int "Sleep Key Pin"
-    default 35
-    depends on ENABLE_SLEEP_KEY
+        config SLEEP_KEY_PIN
+            int "Sleep Key Pin"
+            default 35
+            depends on ENABLE_SLEEP_KEY
 endmenu
 
 menu "GUI Configuration"
-config ENABLE_GUI
-    bool "Enable GUI"
-    default y
+    config ENABLE_GUI
+        bool "Enable GUI"
+        default y
 
-choice LCD_ORIENTATION
-    prompt "LCD Orientation"
-    default LCD_ORIENTATION_NORMAL
-    depends on ENABLE_GUI
+        choice LCD_ORIENTATION
+            prompt "LCD Orientation"
+            default LCD_ORIENTATION_NORMAL
+            depends on ENABLE_GUI
 
-config LCD_ORIENTATION_NORMAL
-    bool "Normal"
-config LCD_ORIENTATION_UPSIDE_DOWN
-    bool "Upside Down"
-endchoice
+            config LCD_ORIENTATION_NORMAL
+                bool "Normal"
+            config LCD_ORIENTATION_UPSIDE_DOWN
+                bool "Upside Down"
+        endchoice
 
-config LCD_ROTATION_DEGREE
-    int
-    default  90 if LCD_ORIENTATION_NORMAL
-    default 270 if LCD_ORIENTATION_UPSIDE_DOWN
+        config LCD_ROTATION_DEGREE
+            int
+            default  90 if LCD_ORIENTATION_NORMAL
+            default 270 if LCD_ORIENTATION_UPSIDE_DOWN
 
-config LCD_RST_PIN
-    int "LCD RST Pin"
-    default 2
-    depends on ENABLE_GUI
+        config LCD_RST_PIN
+            int "LCD RST Pin"
+            default 2
+            depends on ENABLE_GUI
 
-config LCD_DC_PIN
-    int "LCD DC Pin"
-    default 16
-    depends on ENABLE_GUI
+        config LCD_DC_PIN
+            int "LCD DC Pin"
+            default 16
+            depends on ENABLE_GUI
 
-config LCD_BL_PIN
-    int "LCD BL Pin"
-    default 4
-    depends on ENABLE_GUI
+        config LCD_BL_PIN
+            int "LCD BL Pin"
+            default 4
+            depends on ENABLE_GUI
 
-config SPI_SCLK_PIN
-    int "SPI SCLK Pin"
-    default 18
-    depends on ENABLE_GUI
+        config SPI_SCLK_PIN
+            int "SPI SCLK Pin"
+            default 18
+            depends on ENABLE_GUI
 
-config SPI_MOSI_PIN
-    int "SPI MOSI Pin"
-    default 19
-    depends on ENABLE_GUI
+        config SPI_MOSI_PIN
+            int "SPI MOSI Pin"
+            default 19
+            depends on ENABLE_GUI
 
-config SPI_CS_PIN
-    int "SPI CS Pin"
-    default 5
-    depends on ENABLE_GUI
+        config SPI_CS_PIN
+            int "SPI CS Pin"
+            default 5
+            depends on ENABLE_GUI
 endmenu
 
 menu "LED Configuration"
-config ENABLE_LED
-    bool "Enable LED"
-    default n
+    config ENABLE_LED
+        bool "Enable LED"
+        default n
 
-choice LED_ACTIVE_LEVEL
-    prompt "LED Active Level"
-    default LED_ACTIVE_HIGH
-    depends on ENABLE_LED
+        choice LED_ACTIVE_LEVEL
+            prompt "LED Active Level"
+            default LED_ACTIVE_HIGH
+            depends on ENABLE_LED
 
-config LED_ACTIVE_HIGH
-    bool "Active High"
-config LED_ACTIVE_LOW
-    bool "Active Low"
-endchoice
+            config LED_ACTIVE_HIGH
+                bool "Active High"
+            config LED_ACTIVE_LOW
+                bool "Active Low"
+        endchoice
 
-config LED_PIN
-    int "LED Pin"
-    default 25
-    depends on ENABLE_LED
-endmenu
-
+        config LED_PIN
+            int "LED Pin"
+            default 25
+            depends on ENABLE_LED
+        endmenu
 endmenu

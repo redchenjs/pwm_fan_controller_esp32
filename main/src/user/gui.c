@@ -69,7 +69,7 @@ static void gui_task(void *pvParameter)
 
             gdispGSetBacklight(gui_gdisp, 255);
 
-            snprintf(text_buff, sizeof(text_buff), "%u%s", fan_get_duty(), fan_env_saved() ? "" : "*");
+            snprintf(text_buff, sizeof(text_buff), "%u%s", fan_get_conf()->duty, fan_env_saved() ? "" : "*");
             gdispGFillStringBox(gui_gdisp, 95, 2, 143, 32, text_buff, gui_font, Yellow, Black, justifyRight);
 
             snprintf(text_buff, sizeof(text_buff), "%u", fan_get_rpm());

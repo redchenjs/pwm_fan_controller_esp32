@@ -179,14 +179,20 @@ static void profile_cfg_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
             rsp.attr_value.len = 2;
             memcpy(rsp.attr_value.value, &desc_val_fan, sizeof(desc_val_fan));
         } else {
+            fan_conf_t *fan = fan_get_conf();
+
             rsp.attr_value.len = 8;
-            rsp.attr_value.value[0] = 0x04;
-            rsp.attr_value.value[1] = 0x00;
-            rsp.attr_value.value[2] = 0x00;
-            rsp.attr_value.value[3] = 0x00;
-            rsp.attr_value.value[4] = 0x00;
-            rsp.attr_value.value[5] = 0x00;
-            rsp.attr_value.value[6] = fan_get_duty();
+            #ifdef CONFIG_ENABLE_FAN_RGB
+                rsp.attr_value.value[0] = 0x05;
+            #else
+                rsp.attr_value.value[0] = 0x04;
+            #endif
+            rsp.attr_value.value[1] = fan->color_s;
+            rsp.attr_value.value[2] = fan->color_h >> 8;
+            rsp.attr_value.value[3] = fan->color_h & 0xff;
+            rsp.attr_value.value[4] = fan->color_l >> 8;
+            rsp.attr_value.value[5] = fan->color_l & 0xff;
+            rsp.attr_value.value[6] = fan->duty;
             rsp.attr_value.value[7] = 0x00;
         }
 
@@ -199,12 +205,22 @@ static void profile_cfg_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t 
             if (param->write.handle == gatts_profile_tbl[PROFILE_IDX_CFG].descr_handle) {
                 desc_val_fan = param->write.value[1] << 8 | param->write.value[0];
             } else {
+                fan_conf_t *fan = fan_get_conf();
+
                 switch (param->write.value[0]) {
                 case 0xEF:
                     if (param->write.len == 1) {            // restore default configuration
-                        fan_set_duty(DEFAULT_FAN_DUTY);
+                        fan->duty    = DEFAULT_FAN_DUTY;
+                        fan->color_h = DEFAULT_FAN_COLOR_H;
+                        fan->color_s = DEFAULT_FAN_COLOR_S;
+                        fan->color_l = DEFAULT_FAN_COLOR_L;
+                        fan_set_conf(fan);
                     } else if (param->write.len == 8) {     // apply new configuration
-                        fan_set_duty(param->write.value[6]);
+                        fan->duty    = param->write.value[6];
+                        fan->color_h = param->write.value[2] << 8 | param->write.value[3];
+                        fan->color_s = param->write.value[1];
+                        fan->color_l = (param->write.value[4] << 8 | param->write.value[5]) % 0x0200;
+                        fan_set_conf(fan);
                     } else {
                         ESP_LOGE(GATTS_CFG_TAG, "invalid command: 0x%02X", param->write.value[0]);
                     }

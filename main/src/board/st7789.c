@@ -22,6 +22,15 @@ static spi_transaction_t spi_trans[2] = {0};
 
 void st7789_init_board(void)
 {
+#if (CONFIG_LCD_RST_PIN < 0)
+    gpio_config_t io_conf = {
+        .pin_bit_mask = BIT64(CONFIG_LCD_DC_PIN),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = false,
+        .pull_down_en = false,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+#else
     gpio_config_t io_conf = {
         .pin_bit_mask = BIT64(CONFIG_LCD_DC_PIN) | BIT64(CONFIG_LCD_RST_PIN),
         .mode = GPIO_MODE_OUTPUT,
@@ -29,6 +38,7 @@ void st7789_init_board(void)
         .pull_down_en = false,
         .intr_type = GPIO_INTR_DISABLE
     };
+#endif
     gpio_config(&io_conf);
 
     ledc_timer_config_t ledc_timer = {
@@ -67,7 +77,9 @@ void st7789_setpin_dc(spi_transaction_t *t)
 
 void st7789_setpin_reset(uint8_t val)
 {
+#if (CONFIG_LCD_RST_PIN < 0)
     gpio_set_level(CONFIG_LCD_RST_PIN, val);
+#endif
 }
 
 void st7789_write_cmd(uint8_t cmd)
